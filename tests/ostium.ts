@@ -4,13 +4,13 @@ import { Ostium } from "../target/types/ostium";
 
 describe("ostium", () => {
   // Configure the client to use the local cluster.
-  anchor.setProvider(anchor.Provider.env());
+  anchor.setProvider(anchor.AnchorProvider.env());
 
   const program = anchor.workspace.Ostium as Program<Ostium>;
 
   it("Is initialized!", async () => {
     // Add your test here.
-    const tx = await program.rpc.initialize({});
+    const tx = await program.methods.initialize().rpc();
     console.log("Your transaction signature", tx);
   });
 });
