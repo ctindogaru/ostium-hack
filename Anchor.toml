@@ -2,7 +2,7 @@
 seeds = false
 skip-lint = false
 [programs.localnet]
-ostium = "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
+ostium = "DVCuZ7CgEi3WJrr1RMUhEP2eYW8PFKZXxw67RK9B9W6y"
 
 [registry]
 url = "https://api.apr.dev"
