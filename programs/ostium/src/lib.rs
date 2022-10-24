@@ -1,5 +1,7 @@
+pub mod account;
 pub mod context;
 use anchor_lang::prelude::*;
+use anchor_spl::token;
 use context::*;
 
 declare_id!("DVCuZ7CgEi3WJrr1RMUhEP2eYW8PFKZXxw67RK9B9W6y");
@@ -12,7 +14,21 @@ pub mod ostium {
         Ok(())
     }
 
-    pub fn deposit(_ctx: Context<Deposit>) -> Result<()> {
+    pub fn deposit(ctx: Context<Deposit>, amount: u64) -> Result<()> {
+        msg!("Ostium: DEPOSIT");
+        let exchange = &mut ctx.accounts.exchange;
+
+        let seeds = &[
+            &exchange.to_account_info().key.to_bytes(),
+            &[exchange.bump_seed][..],
+        ];
+
+        let signer = &[&seeds[..]];
+        token::transfer(
+            ctx.accounts.into_transfer_context().with_signer(signer),
+            amount,
+        )?;
+
         Ok(())
     }
 
