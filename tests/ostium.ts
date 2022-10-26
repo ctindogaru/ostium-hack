@@ -1,12 +1,7 @@
 import * as anchor from "@project-serum/anchor";
 import { Program } from "@project-serum/anchor";
 import { assert } from "chai";
-import {
-  createMint,
-  mintTo,
-  createAccount,
-  getOrCreateAssociatedTokenAccount,
-} from "@solana/spl-token";
+import { createMint } from "@solana/spl-token";
 import { Ostium } from "../target/types/ostium";
 import { OSTIUM_SEED } from "./utils";
 const { SystemProgram } = anchor.web3;
@@ -45,7 +40,7 @@ describe("ostium", () => {
     const TOKEN_DECIMALS = 6;
     const usdcOwner: anchor.web3.Keypair = anchor.web3.Keypair.generate();
     await airdropSolTokens(connection, usdcOwner);
-    // let usdc = await createMint(
+    // const usdc = await createMint(
     //   connection,
     //   usdcOwner,
     //   usdcOwner.publicKey,
