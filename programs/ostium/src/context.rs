@@ -1,23 +1,19 @@
 use crate::account::*;
 use anchor_lang::prelude::*;
-use anchor_spl::token::{self, TokenAccount, Transfer};
+use anchor_spl::token::{Token, TokenAccount, Transfer};
 
 #[derive(Accounts)]
 pub struct Initialize {}
 
 #[derive(Accounts)]
 pub struct Deposit<'info> {
-    pub exchange: Account<'info, Exchange>,
+    pub state: Account<'info, State>,
     #[account(mut)]
     pub transfer_from: Account<'info, TokenAccount>,
     #[account(mut)]
     pub transfer_to: Account<'info, TokenAccount>,
-    /// CHECK: TBD
-    #[account(signer)]
-    pub transfer_authority: AccountInfo<'info>,
-    /// CHECK: TBD
-    #[account(address = token::ID)]
-    pub token_program: AccountInfo<'info>,
+    pub authority: Signer<'info>,
+    pub token_program: Program<'info, Token>,
 }
 
 impl<'info> Deposit<'info> {
@@ -25,7 +21,7 @@ impl<'info> Deposit<'info> {
         let cpi_accounts = Transfer {
             from: self.transfer_from.to_account_info(),
             to: self.transfer_to.to_account_info(),
-            authority: self.transfer_authority.to_account_info(),
+            authority: self.authority.to_account_info(),
         };
         CpiContext::new(self.token_program.to_account_info(), cpi_accounts)
     }

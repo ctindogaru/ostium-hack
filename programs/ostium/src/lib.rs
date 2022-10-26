@@ -16,11 +16,11 @@ pub mod ostium {
 
     pub fn deposit(ctx: Context<Deposit>, amount: u64) -> Result<()> {
         msg!("Ostium: DEPOSIT");
-        let exchange = &mut ctx.accounts.exchange;
+        let state = &mut ctx.accounts.state;
 
         let seeds = &[
-            &exchange.to_account_info().key.to_bytes(),
-            &[exchange.bump_seed][..],
+            &state.to_account_info().key.to_bytes(),
+            &[state.bump_seed][..],
         ];
 
         let signer = &[&seeds[..]];
