@@ -10,7 +10,12 @@ declare_id!("DVCuZ7CgEi3WJrr1RMUhEP2eYW8PFKZXxw67RK9B9W6y");
 pub mod ostium {
     use super::*;
 
-    pub fn initialize(_ctx: Context<Initialize>) -> Result<()> {
+    pub fn initialize(ctx: Context<Initialize>, bump: u8) -> Result<()> {
+        let state = &mut ctx.accounts.state;
+
+        state.bump_seed = bump;
+        state.admin = *ctx.accounts.admin.key;
+
         Ok(())
     }
 

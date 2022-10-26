@@ -3,7 +3,11 @@ use anchor_lang::prelude::*;
 use anchor_spl::token::{Token, TokenAccount, Transfer};
 
 #[derive(Accounts)]
-pub struct Initialize {}
+pub struct Initialize<'info> {
+    /// CHECK: safe
+    pub admin: AccountInfo<'info>,
+    pub state: Account<'info, State>,
+}
 
 #[derive(Accounts)]
 pub struct Deposit<'info> {
