@@ -1,12 +1,17 @@
 use crate::account::*;
 use anchor_lang::prelude::*;
 use anchor_spl::token::{Token, TokenAccount, Transfer};
+use std::mem::size_of;
 
 #[derive(Accounts)]
 pub struct Initialize<'info> {
+    #[account(init, payer = signer, space = 8 + size_of::<State>())]
+    pub state: Account<'info, State>,
+    #[account(mut)]
+    pub signer: Signer<'info>,
+    pub system_program: Program<'info, System>,
     /// CHECK: safe
     pub admin: AccountInfo<'info>,
-    pub state: Account<'info, State>,
 }
 
 #[derive(Accounts)]

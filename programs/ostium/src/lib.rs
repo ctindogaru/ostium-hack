@@ -4,6 +4,8 @@ use anchor_lang::prelude::*;
 use anchor_spl::token;
 use context::*;
 
+const OSTIUM_SEED: &str = "Ostium";
+
 declare_id!("DVCuZ7CgEi3WJrr1RMUhEP2eYW8PFKZXxw67RK9B9W6y");
 
 #[program]
@@ -13,6 +15,7 @@ pub mod ostium {
     pub fn initialize(ctx: Context<Initialize>, bump: u8) -> Result<()> {
         let state = &mut ctx.accounts.state;
 
+        state.is_initialized = true;
         state.bump_seed = bump;
         state.admin = *ctx.accounts.admin.key;
 
@@ -23,11 +26,7 @@ pub mod ostium {
         msg!("Ostium: DEPOSIT");
         let state = &mut ctx.accounts.state;
 
-        let seeds = &[
-            &state.to_account_info().key.to_bytes(),
-            &[state.bump_seed][..],
-        ];
-
+        let seeds = &[OSTIUM_SEED.as_bytes(), &[state.bump_seed]];
         let signer = &[&seeds[..]];
         token::transfer(
             ctx.accounts.into_transfer_context().with_signer(signer),
