@@ -13,6 +13,7 @@ pub mod ostium {
     use super::*;
 
     pub fn initialize(ctx: Context<Initialize>, bump: u8) -> Result<()> {
+        msg!("Ostium: INITIALIZE");
         let state = &mut ctx.accounts.state;
 
         state.is_initialized = true;
@@ -36,7 +37,17 @@ pub mod ostium {
         Ok(())
     }
 
-    pub fn withdraw(_ctx: Context<Withdraw>) -> Result<()> {
+    pub fn withdraw(ctx: Context<Withdraw>, amount: u64) -> Result<()> {
+        msg!("Ostium: WITHDRAW");
+        let state = &mut ctx.accounts.state;
+
+        let seeds = &[OSTIUM_SEED.as_bytes(), &[state.bump_seed]];
+        let signer = &[&seeds[..]];
+        token::transfer(
+            ctx.accounts.into_transfer_context().with_signer(signer),
+            amount,
+        )?;
+
         Ok(())
     }
 
