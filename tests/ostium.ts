@@ -13,8 +13,17 @@ describe("ostium", () => {
   const wallet = provider.wallet;
   const program = anchor.workspace.Ostium as Program<Ostium>;
   const state: anchor.web3.Keypair = anchor.web3.Keypair.generate();
+  const usdcOwner: anchor.web3.Keypair = anchor.web3.Keypair.generate();
+  let usdcAccount;
+  let pdaAccount;
+  let usdc;
   let pda;
   let bump;
+
+  const TOKEN_DECIMALS = 6;
+  const TOKEN_MINT_AMOUNT = 1_000_000 * 10 ** TOKEN_DECIMALS;
+  const DEPOSIT_AMOUNT = 1_000 * 10 ** TOKEN_DECIMALS;
+  const WITHDRAW_AMOUNT = 500 * 10 ** TOKEN_DECIMALS;
 
   it("initialize", async () => {
     [pda, bump] = await anchor.web3.PublicKey.findProgramAddress(
@@ -39,13 +48,8 @@ describe("ostium", () => {
   });
 
   it("deposit", async () => {
-    const TOKEN_DECIMALS = 6;
-    const TOKEN_MINT_AMOUNT = 1_000_000 * 10 ** TOKEN_DECIMALS;
-    const DEPOSIT_AMOUNT = 1_000 * 10 ** TOKEN_DECIMALS;
-
-    const usdcOwner: anchor.web3.Keypair = anchor.web3.Keypair.generate();
     await airdropSolTokens(connection, usdcOwner);
-    const usdc = await Token.createMint(
+    usdc = await Token.createMint(
       connection,
       usdcOwner,
       usdcOwner.publicKey,
@@ -53,9 +57,9 @@ describe("ostium", () => {
       TOKEN_DECIMALS,
       TOKEN_PROGRAM_ID
     );
-    const usdcAccount = await usdc.createAccount(usdcOwner.publicKey);
+    usdcAccount = await usdc.createAccount(usdcOwner.publicKey);
     await usdc.mintTo(usdcAccount, usdcOwner, [], TOKEN_MINT_AMOUNT);
-    const pdaAccount = await usdc.createAccount(pda);
+    pdaAccount = await usdc.createAccount(pda);
 
     let accountInfo;
     accountInfo = await usdc.getAccountInfo(usdcAccount);
@@ -66,7 +70,6 @@ describe("ostium", () => {
     await program.methods
       .deposit(new anchor.BN(DEPOSIT_AMOUNT))
       .accounts({
-        state: state.publicKey,
         transferFrom: usdcAccount,
         transferTo: pdaAccount,
         authority: usdcOwner.publicKey,
@@ -79,6 +82,32 @@ describe("ostium", () => {
     assert(accountInfo.amount == TOKEN_MINT_AMOUNT - DEPOSIT_AMOUNT);
     accountInfo = await usdc.getAccountInfo(pdaAccount);
     assert(accountInfo.amount == DEPOSIT_AMOUNT);
+  });
+
+  it("withdraw", async () => {
+    let accountInfo;
+    accountInfo = await usdc.getAccountInfo(usdcAccount);
+    assert(accountInfo.amount == TOKEN_MINT_AMOUNT - DEPOSIT_AMOUNT);
+    accountInfo = await usdc.getAccountInfo(pdaAccount);
+    assert(accountInfo.amount == DEPOSIT_AMOUNT);
+
+    await program.methods
+      .withdraw(new anchor.BN(WITHDRAW_AMOUNT))
+      .accounts({
+        state: state.publicKey,
+        transferFrom: pdaAccount,
+        transferTo: usdcAccount,
+        authority: pda,
+        tokenProgram: TOKEN_PROGRAM_ID,
+      })
+      .rpc();
+
+    accountInfo = await usdc.getAccountInfo(usdcAccount);
+    assert(
+      accountInfo.amount == TOKEN_MINT_AMOUNT - DEPOSIT_AMOUNT + WITHDRAW_AMOUNT
+    );
+    accountInfo = await usdc.getAccountInfo(pdaAccount);
+    assert(accountInfo.amount == DEPOSIT_AMOUNT - WITHDRAW_AMOUNT);
   });
 });
 

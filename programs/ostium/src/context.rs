@@ -16,7 +16,6 @@ pub struct Initialize<'info> {
 
 #[derive(Accounts)]
 pub struct Deposit<'info> {
-    pub state: Account<'info, State>,
     #[account(mut)]
     pub transfer_from: Account<'info, TokenAccount>,
     #[account(mut)]
@@ -43,7 +42,7 @@ pub struct Withdraw<'info> {
     pub transfer_from: Account<'info, TokenAccount>,
     #[account(mut)]
     pub transfer_to: Account<'info, TokenAccount>,
-    /// CHECK: safe
+    /// CHECK: This is not dangerous because we don't read or write from this account
     pub authority: AccountInfo<'info>,
     pub token_program: Program<'info, Token>,
 }

@@ -25,14 +25,8 @@ pub mod ostium {
 
     pub fn deposit(ctx: Context<Deposit>, amount: u64) -> Result<()> {
         msg!("Ostium: DEPOSIT");
-        let state = &mut ctx.accounts.state;
 
-        let seeds = &[OSTIUM_SEED.as_bytes(), &[state.bump_seed]];
-        let signer = &[&seeds[..]];
-        token::transfer(
-            ctx.accounts.into_transfer_context().with_signer(signer),
-            amount,
-        )?;
+        token::transfer(ctx.accounts.into_transfer_context(), amount)?;
 
         Ok(())
     }
