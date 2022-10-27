@@ -1,7 +1,7 @@
 import * as anchor from "@project-serum/anchor";
 import { Program } from "@project-serum/anchor";
 import { assert } from "chai";
-import { createMint } from "@solana/spl-token";
+import { TOKEN_PROGRAM_ID, Token } from "@solana/spl-token";
 import { Ostium } from "../target/types/ostium";
 import { OSTIUM_SEED } from "./utils";
 const { SystemProgram } = anchor.web3;
@@ -40,13 +40,14 @@ describe("ostium", () => {
     const TOKEN_DECIMALS = 6;
     const usdcOwner: anchor.web3.Keypair = anchor.web3.Keypair.generate();
     await airdropSolTokens(connection, usdcOwner);
-    // const usdc = await createMint(
-    //   connection,
-    //   usdcOwner,
-    //   usdcOwner.publicKey,
-    //   null,
-    //   TOKEN_DECIMALS
-    // );
+    const usdc = await Token.createMint(
+      connection,
+      usdcOwner,
+      usdcOwner.publicKey,
+      null,
+      TOKEN_DECIMALS,
+      TOKEN_PROGRAM_ID
+    );
   });
 });
 
@@ -55,10 +56,5 @@ const airdropSolTokens = async (connection, wallet) => {
     wallet.publicKey,
     anchor.web3.LAMPORTS_PER_SOL
   );
-  const latestBlockHash = await connection.getLatestBlockhash();
-  await connection.confirmTransaction({
-    blockhash: latestBlockHash.blockhash,
-    lastValidBlockHeight: latestBlockHash.lastValidBlockHeight,
-    signature: airdrop_sig,
-  });
+  await connection.confirmTransaction(airdrop_sig, "confirmed");
 };
