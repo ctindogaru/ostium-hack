@@ -32,6 +32,8 @@ pub mod ostium {
     pub fn deposit(ctx: Context<Deposit>, amount: u64) -> Result<()> {
         msg!("Ostium: DEPOSIT");
 
+
+
         token::transfer(ctx.accounts.into_transfer_context(), amount)?;
 
         Ok(())
@@ -52,14 +54,17 @@ pub mod ostium {
     }
 
     pub fn open_position(_ctx: Context<OpenPosition>) -> Result<()> {
+        msg!("Ostium: OPEN POSITION");
         Ok(())
     }
 
     pub fn close_position(_ctx: Context<ClosePosition>) -> Result<()> {
+        msg!("Ostium: CLOSE POSITION");
         Ok(())
     }
 
     pub fn liquidate_position(_ctx: Context<LiquidatePosition>) -> Result<()> {
+        msg!("Ostium: LIQUIDATE POSITION ");
         Ok(())
     }
 }
