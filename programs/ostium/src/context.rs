@@ -15,6 +15,24 @@ pub struct Initialize<'info> {
 }
 
 #[derive(Accounts)]
+pub struct InitializePositionManager<'info> {
+    #[account(
+        init,
+        seeds = [
+            b"position-manager".as_ref(),
+            signer.key().as_ref()
+        ],
+        bump,
+        payer = signer,
+        space = 8 + size_of::<PositionManager>()
+    )]
+    pub position_manager: Account<'info, PositionManager>,
+    #[account(mut)]
+    pub signer: Signer<'info>,
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
 pub struct Deposit<'info> {
     #[account(mut)]
     pub transfer_from: Account<'info, TokenAccount>,

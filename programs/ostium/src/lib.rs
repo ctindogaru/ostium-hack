@@ -29,6 +29,21 @@ pub mod ostium {
         Ok(())
     }
 
+    pub fn initialize_position_manager(ctx: Context<InitializePositionManager>) -> Result<()> {
+        msg!("Ostium: INITIALIZE POSITION MANAGER");
+        let position_manager = &mut ctx.accounts.position_manager;
+
+        require!(
+            !position_manager.is_initialized,
+            error::ErrorCode::AlreadyInitialized
+        );
+
+        position_manager.is_initialized = true;
+        position_manager.no_of_positions = 0;
+
+        Ok(())
+    }
+
     pub fn deposit(ctx: Context<Deposit>, amount: u64) -> Result<()> {
         msg!("Ostium: DEPOSIT");
 
@@ -65,9 +80,10 @@ pub mod ostium {
             error::ErrorCode::NotInitialized
         );
 
-        let price_account_info = &ctx.accounts.price_account_info;
+        // let price_account_info = &ctx.accounts.price_account_info;
         position.is_initialized = true;
-        position.entry_price = get_current_price(price_account_info);
+        // position.entry_price = get_current_price(price_account_info);
+        position.entry_price = 1650;
         position.quantity = quantity;
         position.leverage = leverage;
         position.status = PositionStatus::Open;
@@ -92,8 +108,9 @@ pub mod ostium {
 
         position.status = PositionStatus::Closed;
 
-        let price_account_info = &ctx.accounts.price_account_info;
-        let current_price = get_current_price(price_account_info);
+        // let price_account_info = &ctx.accounts.price_account_info;
+        // let current_price = get_current_price(price_account_info);
+        let current_price = 1800;
         // we assume a long and profitable position for now
         let _pnl =
             (current_price - position.entry_price) * position.quantity * position.leverage as u64;
