@@ -5,6 +5,7 @@ pub mod utils;
 use anchor_lang::prelude::*;
 use anchor_spl::token;
 use context::*;
+use utils::*;
 
 const OSTIUM_SEED: &str = "Ostium";
 
@@ -32,8 +33,6 @@ pub mod ostium {
     pub fn deposit(ctx: Context<Deposit>, amount: u64) -> Result<()> {
         msg!("Ostium: DEPOSIT");
 
-
-
         token::transfer(ctx.accounts.into_transfer_context(), amount)?;
 
         Ok(())
@@ -53,8 +52,20 @@ pub mod ostium {
         Ok(())
     }
 
-    pub fn open_position(_ctx: Context<OpenPosition>) -> Result<()> {
+    pub fn open_position(ctx: Context<OpenPosition>, quantity: u64, leverage: u8) -> Result<()> {
         msg!("Ostium: OPEN POSITION");
+        let position = &mut ctx.accounts.position;
+
+        if position.is_initialized {
+            return Err(error::ErrorCode::AlreadyInitialized.into());
+        }
+
+        let price_account_info = &ctx.accounts.price_account_info;
+        position.is_initialized = true;
+        position.entry_price = get_current_price(price_account_info);
+        position.quantity = quantity;
+        position.leverage = leverage;
+
         Ok(())
     }
 

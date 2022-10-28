@@ -11,7 +11,7 @@ pub struct State {
 pub struct Position {
     pub is_initialized: bool,
     pub entry_price: u64,
-    pub amount: u64,
+    pub quantity: u64,
     pub leverage: u8,
 }
 

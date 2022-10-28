@@ -59,7 +59,14 @@ impl<'info> Withdraw<'info> {
 }
 
 #[derive(Accounts)]
-pub struct OpenPosition {}
+pub struct OpenPosition<'info> {
+    #[account(mut)]
+    pub position: Account<'info, Position>,
+    #[account(mut)]
+    pub position_manager: Account<'info, PositionManager>,
+    /// CHECK: This is not dangerous because we don't read or write from this account
+    pub price_account_info: AccountInfo<'info>,
+}
 
 #[derive(Accounts)]
 pub struct ClosePosition {}
