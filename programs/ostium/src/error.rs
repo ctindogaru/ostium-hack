@@ -8,4 +8,7 @@ pub enum ErrorCode {
     // 1
     #[msg("This account has not been initialized.")]
     NotInitialized,
+    // 2
+    #[msg("This position is not opened.")]
+    PositionNotOpened,
 }

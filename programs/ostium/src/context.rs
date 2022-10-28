@@ -69,7 +69,12 @@ pub struct OpenPosition<'info> {
 }
 
 #[derive(Accounts)]
-pub struct ClosePosition {}
+pub struct ClosePosition<'info> {
+    #[account(mut)]
+    pub position: Account<'info, Position>,
+    /// CHECK: This is not dangerous because we don't read or write from this account
+    pub price_account_info: AccountInfo<'info>,
+}
 
 #[derive(Accounts)]
 pub struct LiquidatePosition {}

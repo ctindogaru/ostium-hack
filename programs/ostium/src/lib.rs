@@ -20,9 +20,7 @@ pub mod ostium {
         msg!("Ostium: INITIALIZE");
         let state = &mut ctx.accounts.state;
 
-        if state.is_initialized {
-            return Err(error::ErrorCode::AlreadyInitialized.into());
-        }
+        require!(!state.is_initialized, error::ErrorCode::AlreadyInitialized);
 
         state.is_initialized = true;
         state.bump_seed = bump;
@@ -58,12 +56,14 @@ pub mod ostium {
         let position = &mut ctx.accounts.position;
         let position_manager = &mut ctx.accounts.position_manager;
 
-        if position.is_initialized {
-            return Err(error::ErrorCode::AlreadyInitialized.into());
-        }
-        if !position_manager.is_initialized {
-            return Err(error::ErrorCode::NotInitialized.into());
-        }
+        require!(
+            !position.is_initialized,
+            error::ErrorCode::AlreadyInitialized
+        );
+        require!(
+            position_manager.is_initialized,
+            error::ErrorCode::NotInitialized
+        );
 
         let price_account_info = &ctx.accounts.price_account_info;
         position.is_initialized = true;
@@ -77,8 +77,29 @@ pub mod ostium {
         Ok(())
     }
 
-    pub fn close_position(_ctx: Context<ClosePosition>) -> Result<()> {
+    pub fn close_position(ctx: Context<ClosePosition>) -> Result<()> {
         msg!("Ostium: CLOSE POSITION");
+        let position = &mut ctx.accounts.position;
+
+        require!(
+            position.is_initialized,
+            error::ErrorCode::AlreadyInitialized
+        );
+        require!(
+            position.status == PositionStatus::Open,
+            error::ErrorCode::PositionNotOpened
+        );
+
+        position.status = PositionStatus::Closed;
+
+        let price_account_info = &ctx.accounts.price_account_info;
+        let current_price = get_current_price(price_account_info);
+        // we assume a long and profitable position for now
+        let _pnl =
+            (current_price - position.entry_price) * position.quantity * position.leverage as u64;
+
+        // TODO: send pnl to the user
+
         Ok(())
     }
 
