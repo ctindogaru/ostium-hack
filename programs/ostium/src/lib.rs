@@ -2,6 +2,7 @@ pub mod account;
 pub mod context;
 pub mod error;
 pub mod utils;
+use account::*;
 use anchor_lang::prelude::*;
 use anchor_spl::token;
 use context::*;
@@ -55,9 +56,13 @@ pub mod ostium {
     pub fn open_position(ctx: Context<OpenPosition>, quantity: u64, leverage: u8) -> Result<()> {
         msg!("Ostium: OPEN POSITION");
         let position = &mut ctx.accounts.position;
+        let position_manager = &mut ctx.accounts.position_manager;
 
         if position.is_initialized {
             return Err(error::ErrorCode::AlreadyInitialized.into());
+        }
+        if !position_manager.is_initialized {
+            return Err(error::ErrorCode::NotInitialized.into());
         }
 
         let price_account_info = &ctx.accounts.price_account_info;
@@ -65,6 +70,9 @@ pub mod ostium {
         position.entry_price = get_current_price(price_account_info);
         position.quantity = quantity;
         position.leverage = leverage;
+        position.status = PositionStatus::Open;
+
+        position_manager.no_of_positions += 1;
 
         Ok(())
     }

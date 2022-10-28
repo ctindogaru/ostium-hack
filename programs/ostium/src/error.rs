@@ -5,4 +5,7 @@ pub enum ErrorCode {
     // 0
     #[msg("This account has already been initialized.")]
     AlreadyInitialized,
+    // 1
+    #[msg("This account has not been initialized.")]
+    NotInitialized,
 }
