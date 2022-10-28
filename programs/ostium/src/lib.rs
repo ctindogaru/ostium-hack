@@ -6,7 +6,6 @@ use account::*;
 use anchor_lang::prelude::*;
 use anchor_spl::token;
 use context::*;
-use utils::*;
 
 const OSTIUM_SEED: &str = "Ostium";
 

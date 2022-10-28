@@ -79,11 +79,22 @@ impl<'info> Withdraw<'info> {
 #[derive(Accounts)]
 pub struct OpenPosition<'info> {
     #[account(mut)]
+    pub position_manager: Account<'info, PositionManager>,
+    #[account(
+        init,
+        seeds = [
+            b"position".as_ref(),
+            signer.key().as_ref(),
+            &position_manager.no_of_positions.to_le_bytes(),
+        ],
+        bump,
+        payer = signer,
+        space = 8 + size_of::<Position>()
+    )]
     pub position: Account<'info, Position>,
     #[account(mut)]
-    pub position_manager: Account<'info, PositionManager>,
-    /// CHECK: This is not dangerous because we don't read or write from this account
-    pub price_account_info: AccountInfo<'info>,
+    pub signer: Signer<'info>,
+    pub system_program: Program<'info, System>,
 }
 
 #[derive(Accounts)]
