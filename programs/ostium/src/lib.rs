@@ -1,6 +1,7 @@
 pub mod account;
 pub mod context;
 pub mod error;
+pub mod utils;
 use anchor_lang::prelude::*;
 use anchor_spl::token;
 use context::*;
