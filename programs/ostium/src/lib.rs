@@ -1,5 +1,6 @@
 pub mod account;
 pub mod context;
+pub mod error;
 use anchor_lang::prelude::*;
 use anchor_spl::token;
 use context::*;
@@ -15,6 +16,10 @@ pub mod ostium {
     pub fn initialize(ctx: Context<Initialize>, bump: u8) -> Result<()> {
         msg!("Ostium: INITIALIZE");
         let state = &mut ctx.accounts.state;
+
+        if state.is_initialized {
+            return Err(error::ErrorCode::AlreadyInitialized.into());
+        }
 
         state.is_initialized = true;
         state.bump_seed = bump;
