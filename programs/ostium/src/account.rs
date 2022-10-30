@@ -10,6 +10,7 @@ pub struct State {
 #[account]
 pub struct Position {
     pub is_initialized: bool,
+    pub owner: Pubkey,
     pub entry_price: u64,
     pub exit_price: u64,
     pub quantity: u64,
@@ -20,6 +21,7 @@ pub struct Position {
 #[account]
 pub struct PositionManager {
     pub is_initialized: bool,
+    pub owner: Pubkey,
     pub no_of_positions: u64,
 }
 

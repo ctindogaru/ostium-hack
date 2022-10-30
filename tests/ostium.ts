@@ -139,6 +139,7 @@ describe("ostium", () => {
       managerPda
     );
     assert(managerAccount.isInitialized === true);
+    assert(managerAccount.owner.equals(user.publicKey));
     assert(managerAccount.noOfPositions.eq(new anchor.BN(0)));
 
     let [positionPda, _positionBump] =
@@ -164,6 +165,7 @@ describe("ostium", () => {
 
     let positionAccount = await program.account.position.fetch(positionPda);
     assert(positionAccount.isInitialized === true);
+    assert(positionAccount.owner.equals(user.publicKey));
     assert(positionAccount.entryPrice.eq(new anchor.BN(1650)));
     assert(positionAccount.quantity.eq(new anchor.BN(QUANTITY)));
     assert(positionAccount.leverage === LEVERAGE);
