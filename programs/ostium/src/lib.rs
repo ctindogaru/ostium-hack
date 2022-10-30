@@ -83,6 +83,7 @@ pub mod ostium {
         position.is_initialized = true;
         // position.entry_price = get_current_price(price_account_info);
         position.entry_price = 1650;
+        position.exit_price = 0;
         position.quantity = quantity;
         position.leverage = leverage;
         position.status = PositionStatus::Open;
@@ -110,6 +111,7 @@ pub mod ostium {
         // let price_account_info = &ctx.accounts.price_account_info;
         // let current_price = get_current_price(price_account_info);
         let current_price = 1800;
+        position.exit_price = current_price;
         // we assume a long and profitable position for now
         let _pnl =
             (current_price - position.entry_price) * position.quantity * position.leverage as u64;

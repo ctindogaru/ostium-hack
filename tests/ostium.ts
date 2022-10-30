@@ -112,7 +112,7 @@ describe("ostium", () => {
     assert(accountInfo.amount == DEPOSIT_AMOUNT - WITHDRAW_AMOUNT);
   });
 
-  it("openPosition", async () => {
+  it("openPosition/closePosition", async () => {
     const QUANTITY = 10;
     const LEVERAGE = 50;
 
@@ -162,7 +162,7 @@ describe("ostium", () => {
       .signers([user])
       .rpc();
 
-    const positionAccount = await program.account.position.fetch(positionPda);
+    let positionAccount = await program.account.position.fetch(positionPda);
     assert(positionAccount.isInitialized === true);
     assert(positionAccount.entryPrice.eq(new anchor.BN(1650)));
     assert(positionAccount.quantity.eq(new anchor.BN(QUANTITY)));
@@ -171,6 +171,19 @@ describe("ostium", () => {
 
     managerAccount = await program.account.positionManager.fetch(managerPda);
     assert(managerAccount.noOfPositions.eq(new anchor.BN(1)));
+
+    const priceFeed: anchor.web3.Keypair = anchor.web3.Keypair.generate();
+    await program.methods
+      .closePosition()
+      .accounts({
+        position: positionPda,
+        priceAccountInfo: priceFeed.publicKey,
+      })
+      .rpc();
+
+    positionAccount = await program.account.position.fetch(positionPda);
+    assert(positionAccount.exitPrice.eq(new anchor.BN(1800)));
+    assert(_.isEqual(positionAccount.status, { closed: {} }));
   });
 });
 
