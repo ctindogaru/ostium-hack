@@ -4,6 +4,8 @@ import { assert } from "chai";
 import { TOKEN_PROGRAM_ID, Token } from "@solana/spl-token";
 import { Ostium } from "../target/types/ostium";
 import { OSTIUM_SEED } from "./utils";
+import _ from "lodash";
+
 const { SystemProgram } = anchor.web3;
 
 describe("ostium", () => {
@@ -108,6 +110,67 @@ describe("ostium", () => {
     );
     accountInfo = await usdc.getAccountInfo(pdaAccount);
     assert(accountInfo.amount == DEPOSIT_AMOUNT - WITHDRAW_AMOUNT);
+  });
+
+  it("openPosition", async () => {
+    const QUANTITY = 10;
+    const LEVERAGE = 50;
+
+    const user: anchor.web3.Keypair = anchor.web3.Keypair.generate();
+    await airdropSolTokens(connection, user);
+
+    let [managerPda, _managerBump] =
+      await anchor.web3.PublicKey.findProgramAddress(
+        [Buffer.from("position-manager"), user.publicKey.toBuffer()],
+        program.programId
+      );
+
+    await program.methods
+      .initializePositionManager()
+      .accounts({
+        positionManager: managerPda,
+        signer: user.publicKey,
+        systemProgram: SystemProgram.programId,
+      })
+      .signers([user])
+      .rpc();
+
+    let managerAccount = await program.account.positionManager.fetch(
+      managerPda
+    );
+    assert(managerAccount.isInitialized === true);
+    assert(managerAccount.noOfPositions.eq(new anchor.BN(0)));
+
+    let [positionPda, _positionBump] =
+      await anchor.web3.PublicKey.findProgramAddress(
+        [
+          Buffer.from("position"),
+          user.publicKey.toBuffer(),
+          managerAccount.noOfPositions.toBuffer("le", 8),
+        ],
+        program.programId
+      );
+
+    await program.methods
+      .openPosition(new anchor.BN(QUANTITY), LEVERAGE)
+      .accounts({
+        positionManager: managerPda,
+        position: positionPda,
+        signer: user.publicKey,
+        systemProgram: SystemProgram.programId,
+      })
+      .signers([user])
+      .rpc();
+
+    const positionAccount = await program.account.position.fetch(positionPda);
+    assert(positionAccount.isInitialized === true);
+    assert(positionAccount.entryPrice.eq(new anchor.BN(1650)));
+    assert(positionAccount.quantity.eq(new anchor.BN(QUANTITY)));
+    assert(positionAccount.leverage === LEVERAGE);
+    assert(_.isEqual(positionAccount.status, { open: {} }));
+
+    managerAccount = await program.account.positionManager.fetch(managerPda);
+    assert(managerAccount.noOfPositions.eq(new anchor.BN(1)));
   });
 });
 
