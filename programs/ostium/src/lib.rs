@@ -60,6 +60,10 @@ pub mod ostium {
         msg!("Ostium: WITHDRAW");
 
         let position_manager = &mut ctx.accounts.position_manager;
+        require!(
+            position_manager.balance >= amount,
+            error::ErrorCode::InsufficientFunds
+        );
         position_manager.balance -= amount;
 
         let state = &mut ctx.accounts.state;

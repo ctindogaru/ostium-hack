@@ -11,4 +11,7 @@ pub enum ErrorCode {
     // 2
     #[msg("This position is not opened.")]
     PositionNotOpened,
+    // 3
+    #[msg("The amount that you are trying to withdraw is higher than your account balance.")]
+    InsufficientFunds,
 }
