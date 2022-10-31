@@ -39,6 +39,7 @@ pub mod ostium {
 
         position_manager.is_initialized = true;
         position_manager.owner = *ctx.accounts.signer.key;
+        position_manager.balance = 0;
         position_manager.no_of_positions = 0;
 
         Ok(())
@@ -47,6 +48,9 @@ pub mod ostium {
     pub fn deposit(ctx: Context<Deposit>, amount: u64) -> Result<()> {
         msg!("Ostium: DEPOSIT");
 
+        let position_manager = &mut ctx.accounts.position_manager;
+        position_manager.balance += amount;
+
         token::transfer(ctx.accounts.into_transfer_context(), amount)?;
 
         Ok(())
@@ -54,8 +58,11 @@ pub mod ostium {
 
     pub fn withdraw(ctx: Context<Withdraw>, amount: u64) -> Result<()> {
         msg!("Ostium: WITHDRAW");
-        let state = &mut ctx.accounts.state;
 
+        let position_manager = &mut ctx.accounts.position_manager;
+        position_manager.balance -= amount;
+
+        let state = &mut ctx.accounts.state;
         let seeds = &[OSTIUM_SEED.as_bytes(), &[state.bump_seed]];
         let signer = &[&seeds[..]];
         token::transfer(

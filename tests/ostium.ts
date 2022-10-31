@@ -16,11 +16,14 @@ describe("ostium", () => {
   const program = anchor.workspace.Ostium as Program<Ostium>;
   const state: anchor.web3.Keypair = anchor.web3.Keypair.generate();
   const usdcOwner: anchor.web3.Keypair = anchor.web3.Keypair.generate();
+  const user: anchor.web3.Keypair = anchor.web3.Keypair.generate();
   let usdcAccount;
   let pdaAccount;
   let usdc;
   let pda;
   let bump;
+  let managerPda;
+  let managerBump;
 
   const TOKEN_DECIMALS = 6;
   const TOKEN_MINT_AMOUNT = 1_000_000 * 10 ** TOKEN_DECIMALS;
@@ -47,6 +50,31 @@ describe("ostium", () => {
     assert.ok(stateAccount.bumpSeed === bump);
     assert.ok(stateAccount.isInitialized === true);
     assert.ok(stateAccount.admin.equals(wallet.publicKey));
+
+    await airdropSolTokens(connection, user);
+
+    [managerPda, managerBump] = await anchor.web3.PublicKey.findProgramAddress(
+      [Buffer.from("position-manager"), user.publicKey.toBuffer()],
+      program.programId
+    );
+
+    await program.methods
+      .initializePositionManager()
+      .accounts({
+        positionManager: managerPda,
+        signer: user.publicKey,
+        systemProgram: SystemProgram.programId,
+      })
+      .signers([user])
+      .rpc();
+
+    let managerAccount = await program.account.positionManager.fetch(
+      managerPda
+    );
+    assert(managerAccount.isInitialized === true);
+    assert(managerAccount.owner.equals(user.publicKey));
+    assert(managerAccount.balance.eq(new anchor.BN(0)));
+    assert(managerAccount.noOfPositions.eq(new anchor.BN(0)));
   });
 
   it("deposit", async () => {
@@ -72,6 +100,7 @@ describe("ostium", () => {
     await program.methods
       .deposit(new anchor.BN(DEPOSIT_AMOUNT))
       .accounts({
+        positionManager: managerPda,
         transferFrom: usdcAccount,
         transferTo: pdaAccount,
         authority: usdcOwner.publicKey,
@@ -79,6 +108,11 @@ describe("ostium", () => {
       })
       .signers([usdcOwner])
       .rpc();
+
+    let managerAccount = await program.account.positionManager.fetch(
+      managerPda
+    );
+    assert(managerAccount.balance.eq(new anchor.BN(DEPOSIT_AMOUNT)));
 
     accountInfo = await usdc.getAccountInfo(usdcAccount);
     assert(accountInfo.amount == TOKEN_MINT_AMOUNT - DEPOSIT_AMOUNT);
@@ -96,6 +130,7 @@ describe("ostium", () => {
     await program.methods
       .withdraw(new anchor.BN(WITHDRAW_AMOUNT))
       .accounts({
+        positionManager: managerPda,
         state: state.publicKey,
         transferFrom: pdaAccount,
         transferTo: usdcAccount,
@@ -103,6 +138,13 @@ describe("ostium", () => {
         tokenProgram: TOKEN_PROGRAM_ID,
       })
       .rpc();
+
+    let managerAccount = await program.account.positionManager.fetch(
+      managerPda
+    );
+    assert(
+      managerAccount.balance.eq(new anchor.BN(DEPOSIT_AMOUNT - WITHDRAW_AMOUNT))
+    );
 
     accountInfo = await usdc.getAccountInfo(usdcAccount);
     assert(
@@ -116,32 +158,9 @@ describe("ostium", () => {
     const QUANTITY = 10;
     const LEVERAGE = 50;
 
-    const user: anchor.web3.Keypair = anchor.web3.Keypair.generate();
-    await airdropSolTokens(connection, user);
-
-    let [managerPda, _managerBump] =
-      await anchor.web3.PublicKey.findProgramAddress(
-        [Buffer.from("position-manager"), user.publicKey.toBuffer()],
-        program.programId
-      );
-
-    await program.methods
-      .initializePositionManager()
-      .accounts({
-        positionManager: managerPda,
-        signer: user.publicKey,
-        systemProgram: SystemProgram.programId,
-      })
-      .signers([user])
-      .rpc();
-
     let managerAccount = await program.account.positionManager.fetch(
       managerPda
     );
-    assert(managerAccount.isInitialized === true);
-    assert(managerAccount.owner.equals(user.publicKey));
-    assert(managerAccount.noOfPositions.eq(new anchor.BN(0)));
-
     let [positionPda, _positionBump] =
       await anchor.web3.PublicKey.findProgramAddress(
         [

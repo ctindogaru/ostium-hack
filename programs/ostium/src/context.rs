@@ -35,6 +35,8 @@ pub struct InitializePositionManager<'info> {
 #[derive(Accounts)]
 pub struct Deposit<'info> {
     #[account(mut)]
+    pub position_manager: Account<'info, PositionManager>,
+    #[account(mut)]
     pub transfer_from: Account<'info, TokenAccount>,
     #[account(mut)]
     pub transfer_to: Account<'info, TokenAccount>,
@@ -55,6 +57,8 @@ impl<'info> Deposit<'info> {
 
 #[derive(Accounts)]
 pub struct Withdraw<'info> {
+    #[account(mut)]
+    pub position_manager: Account<'info, PositionManager>,
     pub state: Account<'info, State>,
     #[account(mut)]
     pub transfer_from: Account<'info, TokenAccount>,

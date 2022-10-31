@@ -22,6 +22,7 @@ pub struct Position {
 pub struct PositionManager {
     pub is_initialized: bool,
     pub owner: Pubkey,
+    pub balance: u64,
     pub no_of_positions: u64,
 }
 
