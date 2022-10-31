@@ -48,6 +48,7 @@ pub mod ostium {
         msg!("Ostium: DEPOSIT");
 
         let position_manager = &mut ctx.accounts.position_manager;
+
         position_manager.balance += amount;
 
         token::transfer(ctx.accounts.into_transfer_context(), amount)?;

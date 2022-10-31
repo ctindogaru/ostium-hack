@@ -46,7 +46,7 @@ pub struct Deposit<'info> {
     pub transfer_from: Account<'info, TokenAccount>,
     #[account(mut)]
     pub transfer_to: Account<'info, TokenAccount>,
-    pub authority: Signer<'info>,
+    pub signer: Signer<'info>,
     pub token_program: Program<'info, Token>,
 }
 
@@ -55,7 +55,7 @@ impl<'info> Deposit<'info> {
         let cpi_accounts = Transfer {
             from: self.transfer_from.to_account_info(),
             to: self.transfer_to.to_account_info(),
-            authority: self.authority.to_account_info(),
+            authority: self.signer.to_account_info(),
         };
         CpiContext::new(self.token_program.to_account_info(), cpi_accounts)
     }
@@ -70,8 +70,7 @@ pub struct Withdraw<'info> {
     pub transfer_from: Account<'info, TokenAccount>,
     #[account(mut)]
     pub transfer_to: Account<'info, TokenAccount>,
-    /// CHECK: This is not dangerous because we don't read or write from this account
-    pub authority: AccountInfo<'info>,
+    pub signer: Signer<'info>,
     pub token_program: Program<'info, Token>,
 }
 
@@ -80,7 +79,7 @@ impl<'info> Withdraw<'info> {
         let cpi_accounts = Transfer {
             from: self.transfer_from.to_account_info(),
             to: self.transfer_to.to_account_info(),
-            authority: self.authority.to_account_info(),
+            authority: self.state.to_account_info(),
         };
         CpiContext::new(self.token_program.to_account_info(), cpi_accounts)
     }

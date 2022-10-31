@@ -19,8 +19,8 @@ describe("ostium", () => {
   let usdcAccount;
   let pdaAccount;
   let usdc;
-  let pda;
-  let bump;
+  let ostiumPda;
+  let ostiumBump;
   let managerPda;
   let managerBump;
 
@@ -30,21 +30,21 @@ describe("ostium", () => {
   const WITHDRAW_AMOUNT = 500 * 10 ** TOKEN_DECIMALS;
 
   it("initialize", async () => {
-    [pda, bump] = await anchor.web3.PublicKey.findProgramAddress(
+    [ostiumPda, ostiumBump] = await anchor.web3.PublicKey.findProgramAddress(
       [OSTIUM_SEED],
       program.programId
     );
     await program.methods
-      .initialize(bump)
+      .initialize(ostiumBump)
       .accounts({
-        state: pda,
+        state: ostiumPda,
         signer: wallet.publicKey,
         systemProgram: SystemProgram.programId,
       })
       .rpc();
 
-    const stateAccount = await program.account.state.fetch(pda);
-    assert.ok(stateAccount.bumpSeed === bump);
+    const stateAccount = await program.account.state.fetch(ostiumPda);
+    assert.ok(stateAccount.bumpSeed === ostiumBump);
     assert.ok(stateAccount.isInitialized === true);
 
     await airdropSolTokens(connection, user);
@@ -85,7 +85,7 @@ describe("ostium", () => {
     );
     usdcAccount = await usdc.createAccount(usdcOwner.publicKey);
     await usdc.mintTo(usdcAccount, usdcOwner, [], TOKEN_MINT_AMOUNT);
-    pdaAccount = await usdc.createAccount(pda);
+    pdaAccount = await usdc.createAccount(ostiumPda);
 
     let accountInfo;
     accountInfo = await usdc.getAccountInfo(usdcAccount);
@@ -99,7 +99,7 @@ describe("ostium", () => {
         positionManager: managerPda,
         transferFrom: usdcAccount,
         transferTo: pdaAccount,
-        authority: usdcOwner.publicKey,
+        signer: usdcOwner.publicKey,
         tokenProgram: TOKEN_PROGRAM_ID,
       })
       .signers([usdcOwner])
@@ -127,12 +127,13 @@ describe("ostium", () => {
       .withdraw(new anchor.BN(WITHDRAW_AMOUNT))
       .accounts({
         positionManager: managerPda,
-        state: pda,
+        state: ostiumPda,
         transferFrom: pdaAccount,
         transferTo: usdcAccount,
-        authority: pda,
+        signer: usdcOwner.publicKey,
         tokenProgram: TOKEN_PROGRAM_ID,
       })
+      .signers([usdcOwner])
       .rpc();
 
     let managerAccount = await program.account.positionManager.fetch(
