@@ -23,7 +23,7 @@ pub mod ostium {
 
         state.is_initialized = true;
         state.bump_seed = bump;
-        state.admin = *ctx.accounts.admin.key;
+        state.owner = *ctx.accounts.owner.key;
 
         Ok(())
     }

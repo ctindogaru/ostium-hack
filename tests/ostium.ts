@@ -41,7 +41,7 @@ describe("ostium", () => {
         state: state.publicKey,
         signer: wallet.publicKey,
         systemProgram: SystemProgram.programId,
-        admin: wallet.publicKey,
+        owner: wallet.publicKey,
       })
       .signers([state])
       .rpc();
@@ -49,7 +49,7 @@ describe("ostium", () => {
     const stateAccount = await program.account.state.fetch(state.publicKey);
     assert.ok(stateAccount.bumpSeed === bump);
     assert.ok(stateAccount.isInitialized === true);
-    assert.ok(stateAccount.admin.equals(wallet.publicKey));
+    assert.ok(stateAccount.owner.equals(wallet.publicKey));
 
     await airdropSolTokens(connection, user);
 

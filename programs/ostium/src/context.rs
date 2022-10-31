@@ -11,7 +11,7 @@ pub struct Initialize<'info> {
     pub signer: Signer<'info>,
     pub system_program: Program<'info, System>,
     /// CHECK: safe
-    pub admin: AccountInfo<'info>,
+    pub owner: AccountInfo<'info>,
 }
 
 #[derive(Accounts)]
