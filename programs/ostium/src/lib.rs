@@ -147,6 +147,10 @@ pub mod ostium {
             position.status == PositionStatus::Open,
             error::ErrorCode::PositionNotOpened
         );
+        require!(
+            position.asset == *ctx.accounts.price_account_info.key,
+            error::ErrorCode::WrongAsset
+        );
 
         position.status = PositionStatus::Closed;
 
