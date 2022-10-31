@@ -97,6 +97,7 @@ pub mod ostium {
         position.leverage = leverage;
         position.status = PositionStatus::Open;
 
+        position_manager.balance -= position.entry_price * quantity;
         position_manager.no_of_positions += 1;
 
         Ok(())
@@ -105,10 +106,15 @@ pub mod ostium {
     pub fn close_position(ctx: Context<ClosePosition>) -> Result<()> {
         msg!("Ostium: CLOSE POSITION");
         let position = &mut ctx.accounts.position;
+        let position_manager = &mut ctx.accounts.position_manager;
 
         require!(
             position.is_initialized,
             error::ErrorCode::AlreadyInitialized
+        );
+        require!(
+            position_manager.is_initialized,
+            error::ErrorCode::NotInitialized
         );
         require!(
             position.status == PositionStatus::Open,
@@ -122,10 +128,10 @@ pub mod ostium {
         let current_price = 1800;
         position.exit_price = current_price;
         // we assume a long and profitable position for now
-        let _pnl =
+        let pnl =
             (current_price - position.entry_price) * position.quantity * position.leverage as u64;
 
-        // TODO: send pnl to the user
+        position_manager.balance += position.entry_price * position.quantity + pnl;
 
         Ok(())
     }

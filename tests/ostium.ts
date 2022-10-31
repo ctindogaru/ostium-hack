@@ -197,6 +197,7 @@ describe("ostium", () => {
     await program.methods
       .closePosition()
       .accounts({
+        positionManager: managerPda,
         position: positionPda,
         priceAccountInfo: priceFeed.publicKey,
       })
