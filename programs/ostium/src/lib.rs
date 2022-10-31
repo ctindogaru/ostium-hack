@@ -48,6 +48,10 @@ pub mod ostium {
         msg!("Ostium: DEPOSIT");
 
         let position_manager = &mut ctx.accounts.position_manager;
+        require!(
+            position_manager.owner == *ctx.accounts.signer.key,
+            error::ErrorCode::PermissionDenied
+        );
 
         position_manager.balance += amount;
 
@@ -60,6 +64,10 @@ pub mod ostium {
         msg!("Ostium: WITHDRAW");
 
         let position_manager = &mut ctx.accounts.position_manager;
+        require!(
+            position_manager.owner == *ctx.accounts.signer.key,
+            error::ErrorCode::PermissionDenied
+        );
         require!(
             position_manager.balance >= amount,
             error::ErrorCode::InsufficientFunds
@@ -90,6 +98,10 @@ pub mod ostium {
             position_manager.is_initialized,
             error::ErrorCode::NotInitialized
         );
+        require!(
+            position_manager.owner == *ctx.accounts.signer.key,
+            error::ErrorCode::PermissionDenied
+        );
 
         // let price_account_info = &ctx.accounts.price_account_info;
         position.is_initialized = true;
@@ -119,6 +131,11 @@ pub mod ostium {
         require!(
             position_manager.is_initialized,
             error::ErrorCode::NotInitialized
+        );
+        require!(
+            position_manager.owner == *ctx.accounts.signer.key
+                && position.owner == *ctx.accounts.signer.key,
+            error::ErrorCode::PermissionDenied
         );
         require!(
             position.status == PositionStatus::Open,

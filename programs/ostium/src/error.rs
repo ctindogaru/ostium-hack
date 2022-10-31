@@ -14,4 +14,7 @@ pub enum ErrorCode {
     // 3
     #[msg("The amount that you are trying to withdraw is higher than your account balance.")]
     InsufficientFunds,
+    // 3
+    #[msg("You do not have access to this resource.")]
+    PermissionDenied,
 }

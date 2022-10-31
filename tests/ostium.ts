@@ -16,7 +16,7 @@ describe("ostium", () => {
   const program = anchor.workspace.Ostium as Program<Ostium>;
   const usdcOwner: anchor.web3.Keypair = anchor.web3.Keypair.generate();
   const user: anchor.web3.Keypair = anchor.web3.Keypair.generate();
-  let usdcAccount;
+  let userAccount;
   let pdaAccount;
   let usdc;
   let ostiumPda;
@@ -83,12 +83,12 @@ describe("ostium", () => {
       TOKEN_DECIMALS,
       TOKEN_PROGRAM_ID
     );
-    usdcAccount = await usdc.createAccount(usdcOwner.publicKey);
-    await usdc.mintTo(usdcAccount, usdcOwner, [], TOKEN_MINT_AMOUNT);
+    userAccount = await usdc.createAccount(user.publicKey);
+    await usdc.mintTo(userAccount, usdcOwner, [], TOKEN_MINT_AMOUNT);
     pdaAccount = await usdc.createAccount(ostiumPda);
 
     let accountInfo;
-    accountInfo = await usdc.getAccountInfo(usdcAccount);
+    accountInfo = await usdc.getAccountInfo(userAccount);
     assert(accountInfo.amount == TOKEN_MINT_AMOUNT);
     accountInfo = await usdc.getAccountInfo(pdaAccount);
     assert(accountInfo.amount == 0);
@@ -97,12 +97,12 @@ describe("ostium", () => {
       .deposit(new anchor.BN(DEPOSIT_AMOUNT))
       .accounts({
         positionManager: managerPda,
-        transferFrom: usdcAccount,
+        transferFrom: userAccount,
         transferTo: pdaAccount,
-        signer: usdcOwner.publicKey,
+        signer: user.publicKey,
         tokenProgram: TOKEN_PROGRAM_ID,
       })
-      .signers([usdcOwner])
+      .signers([user])
       .rpc();
 
     let managerAccount = await program.account.positionManager.fetch(
@@ -110,7 +110,7 @@ describe("ostium", () => {
     );
     assert(managerAccount.balance.eq(new anchor.BN(DEPOSIT_AMOUNT)));
 
-    accountInfo = await usdc.getAccountInfo(usdcAccount);
+    accountInfo = await usdc.getAccountInfo(userAccount);
     assert(accountInfo.amount == TOKEN_MINT_AMOUNT - DEPOSIT_AMOUNT);
     accountInfo = await usdc.getAccountInfo(pdaAccount);
     assert(accountInfo.amount == DEPOSIT_AMOUNT);
@@ -118,7 +118,7 @@ describe("ostium", () => {
 
   it("withdraw", async () => {
     let accountInfo;
-    accountInfo = await usdc.getAccountInfo(usdcAccount);
+    accountInfo = await usdc.getAccountInfo(userAccount);
     assert(accountInfo.amount == TOKEN_MINT_AMOUNT - DEPOSIT_AMOUNT);
     accountInfo = await usdc.getAccountInfo(pdaAccount);
     assert(accountInfo.amount == DEPOSIT_AMOUNT);
@@ -129,11 +129,11 @@ describe("ostium", () => {
         positionManager: managerPda,
         state: ostiumPda,
         transferFrom: pdaAccount,
-        transferTo: usdcAccount,
-        signer: usdcOwner.publicKey,
+        transferTo: userAccount,
+        signer: user.publicKey,
         tokenProgram: TOKEN_PROGRAM_ID,
       })
-      .signers([usdcOwner])
+      .signers([user])
       .rpc();
 
     let managerAccount = await program.account.positionManager.fetch(
@@ -143,7 +143,7 @@ describe("ostium", () => {
       managerAccount.balance.eq(new anchor.BN(DEPOSIT_AMOUNT - WITHDRAW_AMOUNT))
     );
 
-    accountInfo = await usdc.getAccountInfo(usdcAccount);
+    accountInfo = await usdc.getAccountInfo(userAccount);
     assert(
       accountInfo.amount == TOKEN_MINT_AMOUNT - DEPOSIT_AMOUNT + WITHDRAW_AMOUNT
     );
