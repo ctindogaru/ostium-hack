@@ -196,8 +196,10 @@ describe("ostium", () => {
       .accounts({
         positionManager: managerPda,
         position: positionPda,
+        signer: user.publicKey,
         priceAccountInfo: priceFeed.publicKey,
       })
+      .signers([user])
       .rpc();
 
     positionAccount = await program.account.position.fetch(positionPda);

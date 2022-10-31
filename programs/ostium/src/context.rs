@@ -114,6 +114,8 @@ pub struct ClosePosition<'info> {
     pub position: Account<'info, Position>,
     /// CHECK: This is not dangerous because we don't read or write from this account
     pub price_account_info: AccountInfo<'info>,
+    #[account(mut)]
+    pub signer: Signer<'info>,
 }
 
 #[derive(Accounts)]
