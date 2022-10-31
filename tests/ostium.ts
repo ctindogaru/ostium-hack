@@ -3,7 +3,7 @@ import { Program } from "@project-serum/anchor";
 import { assert } from "chai";
 import { TOKEN_PROGRAM_ID, Token } from "@solana/spl-token";
 import { Ostium } from "../target/types/ostium";
-import { OSTIUM_SEED } from "./utils";
+import { airdropSolTokens, OSTIUM_SEED } from "./utils";
 import _ from "lodash";
 
 const { SystemProgram } = anchor.web3;
@@ -207,11 +207,3 @@ describe("ostium", () => {
     assert(_.isEqual(positionAccount.status, { closed: {} }));
   });
 });
-
-const airdropSolTokens = async (connection, wallet) => {
-  const airdrop_sig = await connection.requestAirdrop(
-    wallet.publicKey,
-    anchor.web3.LAMPORTS_PER_SOL
-  );
-  await connection.confirmTransaction(airdrop_sig, "confirmed");
-};
