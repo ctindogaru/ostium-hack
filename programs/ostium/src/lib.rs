@@ -113,7 +113,12 @@ pub mod ostium {
         position.leverage = leverage;
         position.status = PositionStatus::Open;
 
-        position_manager.balance -= position.entry_price * quantity;
+        let position_size = position.entry_price * quantity;
+        require!(
+            position_size <= position_manager.balance,
+            error::ErrorCode::InsufficientFunds
+        );
+        position_manager.balance -= position_size;
         position_manager.no_of_positions += 1;
 
         Ok(())
