@@ -3,7 +3,6 @@ use anchor_lang::prelude::*;
 #[account]
 pub struct State {
     pub is_initialized: bool,
-    pub owner: Pubkey,
     pub bump_seed: u8,
 }
 

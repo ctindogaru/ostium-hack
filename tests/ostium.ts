@@ -14,7 +14,6 @@ describe("ostium", () => {
   const connection = provider.connection;
   const wallet = provider.wallet;
   const program = anchor.workspace.Ostium as Program<Ostium>;
-  const state: anchor.web3.Keypair = anchor.web3.Keypair.generate();
   const usdcOwner: anchor.web3.Keypair = anchor.web3.Keypair.generate();
   const user: anchor.web3.Keypair = anchor.web3.Keypair.generate();
   let usdcAccount;
@@ -38,18 +37,15 @@ describe("ostium", () => {
     await program.methods
       .initialize(bump)
       .accounts({
-        state: state.publicKey,
+        state: pda,
         signer: wallet.publicKey,
         systemProgram: SystemProgram.programId,
-        owner: wallet.publicKey,
       })
-      .signers([state])
       .rpc();
 
-    const stateAccount = await program.account.state.fetch(state.publicKey);
+    const stateAccount = await program.account.state.fetch(pda);
     assert.ok(stateAccount.bumpSeed === bump);
     assert.ok(stateAccount.isInitialized === true);
-    assert.ok(stateAccount.owner.equals(wallet.publicKey));
 
     await airdropSolTokens(connection, user);
 
@@ -131,7 +127,7 @@ describe("ostium", () => {
       .withdraw(new anchor.BN(WITHDRAW_AMOUNT))
       .accounts({
         positionManager: managerPda,
-        state: state.publicKey,
+        state: pda,
         transferFrom: pdaAccount,
         transferTo: usdcAccount,
         authority: pda,

@@ -7,7 +7,7 @@ use anchor_lang::prelude::*;
 use anchor_spl::token;
 use context::*;
 
-const OSTIUM_SEED: &str = "Ostium";
+const OSTIUM_SEED: &str = "ostium";
 
 declare_id!("DVCuZ7CgEi3WJrr1RMUhEP2eYW8PFKZXxw67RK9B9W6y");
 
@@ -23,7 +23,6 @@ pub mod ostium {
 
         state.is_initialized = true;
         state.bump_seed = bump;
-        state.owner = *ctx.accounts.owner.key;
 
         Ok(())
     }

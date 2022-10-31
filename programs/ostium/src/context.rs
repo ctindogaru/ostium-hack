@@ -5,13 +5,19 @@ use std::mem::size_of;
 
 #[derive(Accounts)]
 pub struct Initialize<'info> {
-    #[account(init, payer = signer, space = 8 + size_of::<State>())]
+    #[account(
+        init,
+        seeds = [
+            b"ostium".as_ref()
+        ],
+        bump,
+        payer = signer,
+        space = 8 + size_of::<State>()
+    )]
     pub state: Account<'info, State>,
     #[account(mut)]
     pub signer: Signer<'info>,
     pub system_program: Program<'info, System>,
-    /// CHECK: safe
-    pub owner: AccountInfo<'info>,
 }
 
 #[derive(Accounts)]
@@ -89,7 +95,7 @@ pub struct OpenPosition<'info> {
         seeds = [
             b"position".as_ref(),
             signer.key().as_ref(),
-            &position_manager.no_of_positions.to_le_bytes(),
+            &position_manager.no_of_positions.to_le_bytes()
         ],
         bump,
         payer = signer,

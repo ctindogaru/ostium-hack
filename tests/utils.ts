@@ -1,1 +1,1 @@
-export const OSTIUM_SEED = Buffer.from("Ostium");
+export const OSTIUM_SEED = Buffer.from("ostium");
