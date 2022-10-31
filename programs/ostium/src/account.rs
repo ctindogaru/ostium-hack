@@ -10,6 +10,7 @@ pub struct State {
 pub struct Position {
     pub is_initialized: bool,
     pub owner: Pubkey,
+    pub asset: Pubkey,
     pub entry_price: u64,
     pub exit_price: u64,
     pub quantity: u64,

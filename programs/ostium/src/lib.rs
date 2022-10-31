@@ -106,6 +106,7 @@ pub mod ostium {
         // let price_account_info = &ctx.accounts.price_account_info;
         position.is_initialized = true;
         position.owner = *ctx.accounts.signer.key;
+        position.asset = *ctx.accounts.price_account_info.key;
         // position.entry_price = get_current_price(price_account_info);
         position.entry_price = 1650;
         position.exit_price = 0;

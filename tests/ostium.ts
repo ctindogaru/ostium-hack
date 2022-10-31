@@ -168,12 +168,14 @@ describe("ostium", () => {
         program.programId
       );
 
+    const priceFeed: anchor.web3.Keypair = anchor.web3.Keypair.generate();
     await program.methods
       .openPosition(new anchor.BN(QUANTITY), LEVERAGE)
       .accounts({
         positionManager: managerPda,
         position: positionPda,
         signer: user.publicKey,
+        priceAccountInfo: priceFeed.publicKey,
         systemProgram: SystemProgram.programId,
       })
       .signers([user])
@@ -190,7 +192,6 @@ describe("ostium", () => {
     managerAccount = await program.account.positionManager.fetch(managerPda);
     assert(managerAccount.noOfPositions.eq(new anchor.BN(1)));
 
-    const priceFeed: anchor.web3.Keypair = anchor.web3.Keypair.generate();
     await program.methods
       .closePosition()
       .accounts({
