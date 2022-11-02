@@ -14,19 +14,21 @@ describe("ostium", () => {
   const connection = provider.connection;
   const wallet = provider.wallet;
   const program = anchor.workspace.Ostium as Program<Ostium>;
-  const usdcOwner: anchor.web3.Keypair = anchor.web3.Keypair.generate();
+
   const user: anchor.web3.Keypair = anchor.web3.Keypair.generate();
   let userAccount;
-  let pdaAccount;
   let usdc;
+
   let ostiumPda;
   let ostiumBump;
+  let ostiumPdaAccount;
+
   let managerPda;
   let managerBump;
 
   const TOKEN_DECIMALS = 6;
   const USER_MINT_AMOUNT = 1_000_000 * 10 ** TOKEN_DECIMALS;
-  const TREASURY_MINT_AMOUNT = 100_000 * 10 ** TOKEN_DECIMALS;
+  const OSTIUM_MINT_AMOUNT = 100_000 * 10 ** TOKEN_DECIMALS;
   const DEPOSIT_AMOUNT = 1_000 * 10 ** TOKEN_DECIMALS;
   const WITHDRAW_AMOUNT = 500 * 10 ** TOKEN_DECIMALS;
 
@@ -76,25 +78,24 @@ describe("ostium", () => {
   it("end-to-end testing", async () => {
     // ------- INITIAL SETUP -------
 
-    await airdropSolTokens(connection, usdcOwner);
     usdc = await Token.createMint(
       connection,
-      usdcOwner,
-      usdcOwner.publicKey,
+      user,
+      user.publicKey,
       null,
       TOKEN_DECIMALS,
       TOKEN_PROGRAM_ID
     );
     userAccount = await usdc.createAccount(user.publicKey);
-    await usdc.mintTo(userAccount, usdcOwner, [], USER_MINT_AMOUNT);
-    pdaAccount = await usdc.createAccount(ostiumPda);
-    await usdc.mintTo(pdaAccount, usdcOwner, [], TREASURY_MINT_AMOUNT);
+    await usdc.mintTo(userAccount, user, [], USER_MINT_AMOUNT);
+    ostiumPdaAccount = await usdc.createAccount(ostiumPda);
+    await usdc.mintTo(ostiumPdaAccount, user, [], OSTIUM_MINT_AMOUNT);
 
     let accountInfo;
     accountInfo = await usdc.getAccountInfo(userAccount);
     assert(accountInfo.amount == USER_MINT_AMOUNT);
-    accountInfo = await usdc.getAccountInfo(pdaAccount);
-    assert(accountInfo.amount == TREASURY_MINT_AMOUNT);
+    accountInfo = await usdc.getAccountInfo(ostiumPdaAccount);
+    assert(accountInfo.amount == OSTIUM_MINT_AMOUNT);
 
     // ------- OPEN POSITION -------
 
@@ -124,7 +125,7 @@ describe("ostium", () => {
         position: positionPda,
         priceAccountInfo: priceFeed.publicKey,
         transferFrom: userAccount,
-        transferTo: pdaAccount,
+        transferTo: ostiumPdaAccount,
         signer: user.publicKey,
         tokenProgram: TOKEN_PROGRAM_ID,
         systemProgram: SystemProgram.programId,
@@ -153,9 +154,9 @@ describe("ostium", () => {
     assert(
       accountInfo.amount == USER_MINT_AMOUNT - initial_collateral.toNumber()
     );
-    accountInfo = await usdc.getAccountInfo(pdaAccount);
+    accountInfo = await usdc.getAccountInfo(ostiumPdaAccount);
     assert(
-      accountInfo.amount == TREASURY_MINT_AMOUNT + initial_collateral.toNumber()
+      accountInfo.amount == OSTIUM_MINT_AMOUNT + initial_collateral.toNumber()
     );
 
     // ------- DEPOSIT COLLATERAL -------
@@ -166,7 +167,7 @@ describe("ostium", () => {
         positionManager: managerPda,
         position: positionPda,
         transferFrom: userAccount,
-        transferTo: pdaAccount,
+        transferTo: ostiumPdaAccount,
         signer: user.publicKey,
         tokenProgram: TOKEN_PROGRAM_ID,
       })
@@ -185,10 +186,10 @@ describe("ostium", () => {
       accountInfo.amount ==
         USER_MINT_AMOUNT - positionAccount.collateral.toNumber()
     );
-    accountInfo = await usdc.getAccountInfo(pdaAccount);
+    accountInfo = await usdc.getAccountInfo(ostiumPdaAccount);
     assert(
       accountInfo.amount ==
-        TREASURY_MINT_AMOUNT + positionAccount.collateral.toNumber()
+        OSTIUM_MINT_AMOUNT + positionAccount.collateral.toNumber()
     );
 
     // ------- WITHDRAW COLLATERAL -------
@@ -199,7 +200,7 @@ describe("ostium", () => {
         positionManager: managerPda,
         position: positionPda,
         state: ostiumPda,
-        transferFrom: pdaAccount,
+        transferFrom: ostiumPdaAccount,
         transferTo: userAccount,
         signer: user.publicKey,
         tokenProgram: TOKEN_PROGRAM_ID,
@@ -219,10 +220,10 @@ describe("ostium", () => {
       accountInfo.amount ==
         USER_MINT_AMOUNT - positionAccount.collateral.toNumber()
     );
-    accountInfo = await usdc.getAccountInfo(pdaAccount);
+    accountInfo = await usdc.getAccountInfo(ostiumPdaAccount);
     assert(
       accountInfo.amount ==
-        TREASURY_MINT_AMOUNT + positionAccount.collateral.toNumber()
+        OSTIUM_MINT_AMOUNT + positionAccount.collateral.toNumber()
     );
 
     // ------- CLOSE POSITION -------
@@ -234,7 +235,7 @@ describe("ostium", () => {
         position: positionPda,
         state: ostiumPda,
         priceAccountInfo: priceFeed.publicKey,
-        transferFrom: pdaAccount,
+        transferFrom: ostiumPdaAccount,
         transferTo: userAccount,
         signer: user.publicKey,
         tokenProgram: TOKEN_PROGRAM_ID,
@@ -249,7 +250,7 @@ describe("ostium", () => {
     let pnl = (EXIT_PRICE - ENTRY_PRICE) * QUANTITY * LEVERAGE;
     accountInfo = await usdc.getAccountInfo(userAccount);
     assert(accountInfo.amount == USER_MINT_AMOUNT + pnl);
-    accountInfo = await usdc.getAccountInfo(pdaAccount);
-    assert(accountInfo.amount == TREASURY_MINT_AMOUNT - pnl);
+    accountInfo = await usdc.getAccountInfo(ostiumPdaAccount);
+    assert(accountInfo.amount == OSTIUM_MINT_AMOUNT - pnl);
   });
 });
