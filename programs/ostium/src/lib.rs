@@ -100,7 +100,7 @@ pub mod ostium {
         position.owner = *ctx.accounts.signer.key;
         position.asset = *ctx.accounts.price_account_info.key;
         // position.entry_price = get_current_price(price_account_info);
-        position.entry_price = 1650;
+        position.entry_price = 1650 * 10u64.pow(6);
         position.entry_timestamp = Clock::get()?.unix_timestamp as u64;
         position.exit_price = 0;
         position.exit_timestamp = 0;
@@ -147,7 +147,7 @@ pub mod ostium {
 
         // let price_account_info = &ctx.accounts.price_account_info;
         // let current_price = get_current_price(price_account_info);
-        let current_price = 1800;
+        let current_price = 1800 * 10u64.pow(6);
         position.exit_price = current_price;
         position.exit_timestamp = Clock::get()?.unix_timestamp as u64;
 
