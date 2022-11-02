@@ -185,19 +185,19 @@ pub mod ostium {
             error::ErrorCode::WrongAsset
         );
 
-        position.status = PositionStatus::Liquidated;
-
         // let price_account_info = &ctx.accounts.price_account_info;
         // let current_price = get_current_price(price_account_info);
         let current_price = 1800 * 10u64.pow(6);
-        position.exit_price = current_price;
-        position.exit_timestamp = Clock::get()?.unix_timestamp as u64;
 
         let pnl = (current_price as i64 - position.entry_price as i64)
             * position.quantity as i64
             * position.leverage as i64;
 
         if should_be_liquidated(position.collateral as i64, pnl) {
+            position.status = PositionStatus::Liquidated;
+            position.exit_price = current_price;
+            position.exit_timestamp = Clock::get()?.unix_timestamp as u64;
+
             let transfer_amount = position.collateral as i64 + pnl;
             let state = &mut ctx.accounts.state;
             let seeds = &[OSTIUM_SEED.as_bytes(), &[state.bump_seed]];
