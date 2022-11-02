@@ -1,4 +1,7 @@
 {
+    "name": "ostium",
+    "version": "0.1.0",
+    "private": true,
     "scripts": {
         "lint:fix": "prettier */*.js \"*/**/*{.js,.ts}\" -w",
         "lint": "prettier */*.js \"*/**/*{.js,.ts}\" --check"
