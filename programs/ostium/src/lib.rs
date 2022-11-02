@@ -109,7 +109,9 @@ pub mod ostium {
         position.asset = *ctx.accounts.price_account_info.key;
         // position.entry_price = get_current_price(price_account_info);
         position.entry_price = 1650;
+        position.entry_timestamp = Clock::get()?.unix_timestamp as u64;
         position.exit_price = 0;
+        position.exit_timestamp = 0;
         position.quantity = quantity;
         position.leverage = leverage;
         position.status = PositionStatus::Open;
@@ -158,6 +160,7 @@ pub mod ostium {
         // let current_price = get_current_price(price_account_info);
         let current_price = 1800;
         position.exit_price = current_price;
+        position.exit_timestamp = Clock::get()?.unix_timestamp as u64;
         // we assume a long and profitable position for now
         let pnl =
             (current_price - position.entry_price) * position.quantity * position.leverage as u64;
