@@ -152,4 +152,26 @@ impl<'info> ClosePosition<'info> {
 }
 
 #[derive(Accounts)]
-pub struct LiquidatePosition {}
+pub struct LiquidatePosition<'info> {
+    #[account(mut)]
+    pub position: Account<'info, Position>,
+    pub state: Account<'info, State>,
+    /// CHECK: This is not dangerous because we don't read or write from this account
+    pub price_account_info: AccountInfo<'info>,
+    #[account(mut)]
+    pub transfer_from: Account<'info, TokenAccount>,
+    #[account(mut)]
+    pub transfer_to: Account<'info, TokenAccount>,
+    pub token_program: Program<'info, Token>,
+}
+
+impl<'info> LiquidatePosition<'info> {
+    pub fn into_transfer_context(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
+        let cpi_accounts = Transfer {
+            from: self.transfer_from.to_account_info(),
+            to: self.transfer_to.to_account_info(),
+            authority: self.state.to_account_info(),
+        };
+        CpiContext::new(self.token_program.to_account_info(), cpi_accounts)
+    }
+}
