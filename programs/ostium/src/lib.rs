@@ -88,7 +88,7 @@ pub mod ostium {
         Ok(())
     }
 
-    pub fn open_position(ctx: Context<OpenPosition>, quantity: u64, leverage: u8) -> Result<()> {
+    pub fn open_position(ctx: Context<OpenPosition>, quantity: u64, leverage: u16) -> Result<()> {
         msg!("Ostium: OPEN POSITION");
         let position = &mut ctx.accounts.position;
         let position_manager = &mut ctx.accounts.position_manager;
