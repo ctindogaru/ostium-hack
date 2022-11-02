@@ -43,28 +43,40 @@ pub mod ostium {
         Ok(())
     }
 
-    pub fn deposit(ctx: Context<Deposit>, amount: u64) -> Result<()> {
-        msg!("Ostium: DEPOSIT");
+    pub fn deposit_collateral(ctx: Context<Deposit>, amount: u64) -> Result<()> {
+        msg!("Ostium: DEPOSIT COLLATERAL");
 
+        let position = &mut ctx.accounts.position;
         let position_manager = &mut ctx.accounts.position_manager;
         require!(
-            position_manager.owner == *ctx.accounts.signer.key,
+            position_manager.owner == *ctx.accounts.signer.key
+                && position.owner == *ctx.accounts.signer.key,
             error::ErrorCode::PermissionDenied
         );
+
+        position.collateral += amount;
 
         token::transfer(ctx.accounts.into_transfer_context(), amount)?;
 
         Ok(())
     }
 
-    pub fn withdraw(ctx: Context<Withdraw>, amount: u64) -> Result<()> {
-        msg!("Ostium: WITHDRAW");
+    pub fn withdraw_collateral(ctx: Context<Withdraw>, amount: u64) -> Result<()> {
+        msg!("Ostium: WITHDRAW COLLATERAL");
 
+        let position = &mut ctx.accounts.position;
         let position_manager = &mut ctx.accounts.position_manager;
         require!(
-            position_manager.owner == *ctx.accounts.signer.key,
+            position_manager.owner == *ctx.accounts.signer.key
+                && position.owner == *ctx.accounts.signer.key,
             error::ErrorCode::PermissionDenied
         );
+        require!(
+            position.collateral >= amount,
+            error::ErrorCode::InsufficientFunds
+        );
+
+        position.collateral -= amount;
 
         let state = &mut ctx.accounts.state;
         let seeds = &[OSTIUM_SEED.as_bytes(), &[state.bump_seed]];
@@ -109,9 +121,9 @@ pub mod ostium {
         position.status = PositionStatus::Open;
         position_manager.no_of_positions += 1;
 
-        let collateral = position.entry_price * position.quantity;
-        position.collateral = collateral;
-        token::transfer(ctx.accounts.into_transfer_context(), collateral)?;
+        let initial_collateral = position.entry_price * position.quantity;
+        position.collateral = initial_collateral;
+        token::transfer(ctx.accounts.into_transfer_context(), initial_collateral)?;
 
         Ok(())
     }

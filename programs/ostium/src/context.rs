@@ -43,6 +43,8 @@ pub struct Deposit<'info> {
     #[account(mut)]
     pub position_manager: Account<'info, PositionManager>,
     #[account(mut)]
+    pub position: Account<'info, Position>,
+    #[account(mut)]
     pub transfer_from: Account<'info, TokenAccount>,
     #[account(mut)]
     pub transfer_to: Account<'info, TokenAccount>,
@@ -65,6 +67,8 @@ impl<'info> Deposit<'info> {
 pub struct Withdraw<'info> {
     #[account(mut)]
     pub position_manager: Account<'info, PositionManager>,
+    #[account(mut)]
+    pub position: Account<'info, Position>,
     pub state: Account<'info, State>,
     #[account(mut)]
     pub transfer_from: Account<'info, TokenAccount>,
