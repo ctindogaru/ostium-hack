@@ -25,7 +25,8 @@ describe("ostium", () => {
   let managerBump;
 
   const TOKEN_DECIMALS = 6;
-  const TOKEN_MINT_AMOUNT = 1_000_000 * 10 ** TOKEN_DECIMALS;
+  const USER_MINT_AMOUNT = 1_000_000 * 10 ** TOKEN_DECIMALS;
+  const TREASURY_MINT_AMOUNT = 100_000 * 10 ** TOKEN_DECIMALS;
   const DEPOSIT_AMOUNT = 1_000 * 10 ** TOKEN_DECIMALS;
   const WITHDRAW_AMOUNT = 500 * 10 ** TOKEN_DECIMALS;
 
@@ -69,11 +70,12 @@ describe("ostium", () => {
     );
     assert(managerAccount.isInitialized === true);
     assert(managerAccount.owner.equals(user.publicKey));
-    assert(managerAccount.balance.eq(new anchor.BN(0)));
     assert(managerAccount.noOfPositions.eq(new anchor.BN(0)));
   });
 
-  it("deposit", async () => {
+  it("end-to-end testing", async () => {
+    // ------- INITIAL SETUP -------
+
     await airdropSolTokens(connection, usdcOwner);
     usdc = await Token.createMint(
       connection,
@@ -84,76 +86,22 @@ describe("ostium", () => {
       TOKEN_PROGRAM_ID
     );
     userAccount = await usdc.createAccount(user.publicKey);
-    await usdc.mintTo(userAccount, usdcOwner, [], TOKEN_MINT_AMOUNT);
+    await usdc.mintTo(userAccount, usdcOwner, [], USER_MINT_AMOUNT);
     pdaAccount = await usdc.createAccount(ostiumPda);
+    await usdc.mintTo(pdaAccount, usdcOwner, [], TREASURY_MINT_AMOUNT);
 
     let accountInfo;
     accountInfo = await usdc.getAccountInfo(userAccount);
-    assert(accountInfo.amount == TOKEN_MINT_AMOUNT);
+    assert(accountInfo.amount == USER_MINT_AMOUNT);
     accountInfo = await usdc.getAccountInfo(pdaAccount);
-    assert(accountInfo.amount == 0);
+    assert(accountInfo.amount == TREASURY_MINT_AMOUNT);
 
-    await program.methods
-      .deposit(new anchor.BN(DEPOSIT_AMOUNT))
-      .accounts({
-        positionManager: managerPda,
-        transferFrom: userAccount,
-        transferTo: pdaAccount,
-        signer: user.publicKey,
-        tokenProgram: TOKEN_PROGRAM_ID,
-      })
-      .signers([user])
-      .rpc();
+    // ------- OPEN POSITION -------
 
-    let managerAccount = await program.account.positionManager.fetch(
-      managerPda
-    );
-    assert(managerAccount.balance.eq(new anchor.BN(DEPOSIT_AMOUNT)));
-
-    accountInfo = await usdc.getAccountInfo(userAccount);
-    assert(accountInfo.amount == TOKEN_MINT_AMOUNT - DEPOSIT_AMOUNT);
-    accountInfo = await usdc.getAccountInfo(pdaAccount);
-    assert(accountInfo.amount == DEPOSIT_AMOUNT);
-  });
-
-  it("withdraw", async () => {
-    let accountInfo;
-    accountInfo = await usdc.getAccountInfo(userAccount);
-    assert(accountInfo.amount == TOKEN_MINT_AMOUNT - DEPOSIT_AMOUNT);
-    accountInfo = await usdc.getAccountInfo(pdaAccount);
-    assert(accountInfo.amount == DEPOSIT_AMOUNT);
-
-    await program.methods
-      .withdraw(new anchor.BN(WITHDRAW_AMOUNT))
-      .accounts({
-        positionManager: managerPda,
-        state: ostiumPda,
-        transferFrom: pdaAccount,
-        transferTo: userAccount,
-        signer: user.publicKey,
-        tokenProgram: TOKEN_PROGRAM_ID,
-      })
-      .signers([user])
-      .rpc();
-
-    let managerAccount = await program.account.positionManager.fetch(
-      managerPda
-    );
-    assert(
-      managerAccount.balance.eq(new anchor.BN(DEPOSIT_AMOUNT - WITHDRAW_AMOUNT))
-    );
-
-    accountInfo = await usdc.getAccountInfo(userAccount);
-    assert(
-      accountInfo.amount == TOKEN_MINT_AMOUNT - DEPOSIT_AMOUNT + WITHDRAW_AMOUNT
-    );
-    accountInfo = await usdc.getAccountInfo(pdaAccount);
-    assert(accountInfo.amount == DEPOSIT_AMOUNT - WITHDRAW_AMOUNT);
-  });
-
-  it("openPosition/closePosition", async () => {
     const QUANTITY = 10;
     const LEVERAGE = 50;
+    const ENTRY_PRICE = 1650 * 10 ** TOKEN_DECIMALS;
+    const EXIT_PRICE = 1800 * 10 ** TOKEN_DECIMALS;
 
     let managerAccount = await program.account.positionManager.fetch(
       managerPda
@@ -174,8 +122,11 @@ describe("ostium", () => {
       .accounts({
         positionManager: managerPda,
         position: positionPda,
-        signer: user.publicKey,
         priceAccountInfo: priceFeed.publicKey,
+        transferFrom: userAccount,
+        transferTo: pdaAccount,
+        signer: user.publicKey,
+        tokenProgram: TOKEN_PROGRAM_ID,
         systemProgram: SystemProgram.programId,
       })
       .signers([user])
@@ -184,7 +135,13 @@ describe("ostium", () => {
     let positionAccount = await program.account.position.fetch(positionPda);
     assert(positionAccount.isInitialized === true);
     assert(positionAccount.owner.equals(user.publicKey));
-    assert(positionAccount.entryPrice.eq(new anchor.BN(1650)));
+    assert(positionAccount.asset.equals(priceFeed.publicKey));
+    let initial_collateral = positionAccount.quantity.mul(
+      positionAccount.entryPrice
+    );
+    assert(positionAccount.collateral.eq(initial_collateral));
+    assert(positionAccount.entryPrice.eq(new anchor.BN(ENTRY_PRICE)));
+    assert(positionAccount.exitPrice.eq(new anchor.BN(0)));
     assert(positionAccount.quantity.eq(new anchor.BN(QUANTITY)));
     assert(positionAccount.leverage === LEVERAGE);
     assert(_.isEqual(positionAccount.status, { open: {} }));
@@ -192,19 +149,107 @@ describe("ostium", () => {
     managerAccount = await program.account.positionManager.fetch(managerPda);
     assert(managerAccount.noOfPositions.eq(new anchor.BN(1)));
 
+    accountInfo = await usdc.getAccountInfo(userAccount);
+    assert(
+      accountInfo.amount == USER_MINT_AMOUNT - initial_collateral.toNumber()
+    );
+    accountInfo = await usdc.getAccountInfo(pdaAccount);
+    assert(
+      accountInfo.amount == TREASURY_MINT_AMOUNT + initial_collateral.toNumber()
+    );
+
+    // ------- DEPOSIT COLLATERAL -------
+
     await program.methods
-      .closePosition()
+      .depositCollateral(new anchor.BN(DEPOSIT_AMOUNT))
       .accounts({
         positionManager: managerPda,
         position: positionPda,
+        transferFrom: userAccount,
+        transferTo: pdaAccount,
         signer: user.publicKey,
-        priceAccountInfo: priceFeed.publicKey,
+        tokenProgram: TOKEN_PROGRAM_ID,
       })
       .signers([user])
       .rpc();
 
     positionAccount = await program.account.position.fetch(positionPda);
-    assert(positionAccount.exitPrice.eq(new anchor.BN(1800)));
+    assert(
+      positionAccount.collateral.eq(
+        new anchor.BN(DEPOSIT_AMOUNT).add(initial_collateral)
+      )
+    );
+
+    accountInfo = await usdc.getAccountInfo(userAccount);
+    assert(
+      accountInfo.amount ==
+        USER_MINT_AMOUNT - positionAccount.collateral.toNumber()
+    );
+    accountInfo = await usdc.getAccountInfo(pdaAccount);
+    assert(
+      accountInfo.amount ==
+        TREASURY_MINT_AMOUNT + positionAccount.collateral.toNumber()
+    );
+
+    // ------- WITHDRAW COLLATERAL -------
+
+    await program.methods
+      .withdrawCollateral(new anchor.BN(WITHDRAW_AMOUNT))
+      .accounts({
+        positionManager: managerPda,
+        position: positionPda,
+        state: ostiumPda,
+        transferFrom: pdaAccount,
+        transferTo: userAccount,
+        signer: user.publicKey,
+        tokenProgram: TOKEN_PROGRAM_ID,
+      })
+      .signers([user])
+      .rpc();
+
+    positionAccount = await program.account.position.fetch(positionPda);
+    assert(
+      positionAccount.collateral.eq(
+        new anchor.BN(DEPOSIT_AMOUNT - WITHDRAW_AMOUNT).add(initial_collateral)
+      )
+    );
+
+    accountInfo = await usdc.getAccountInfo(userAccount);
+    assert(
+      accountInfo.amount ==
+        USER_MINT_AMOUNT - positionAccount.collateral.toNumber()
+    );
+    accountInfo = await usdc.getAccountInfo(pdaAccount);
+    assert(
+      accountInfo.amount ==
+        TREASURY_MINT_AMOUNT + positionAccount.collateral.toNumber()
+    );
+
+    // ------- CLOSE POSITION -------
+
+    await program.methods
+      .closePosition()
+      .accounts({
+        positionManager: managerPda,
+        position: positionPda,
+        state: ostiumPda,
+        priceAccountInfo: priceFeed.publicKey,
+        transferFrom: pdaAccount,
+        transferTo: userAccount,
+        signer: user.publicKey,
+        tokenProgram: TOKEN_PROGRAM_ID,
+      })
+      .signers([user])
+      .rpc();
+
+    positionAccount = await program.account.position.fetch(positionPda);
+    assert(positionAccount.exitPrice.eq(new anchor.BN(EXIT_PRICE)));
     assert(_.isEqual(positionAccount.status, { closed: {} }));
+
+    let pnl = (EXIT_PRICE - ENTRY_PRICE) * QUANTITY * LEVERAGE;
+    accountInfo = await usdc.getAccountInfo(userAccount);
+    assert(accountInfo.amount == USER_MINT_AMOUNT + pnl);
+    accountInfo = await usdc.getAccountInfo(pdaAccount);
+    assert(accountInfo.amount == TREASURY_MINT_AMOUNT - pnl);
   });
 });

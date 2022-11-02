@@ -132,9 +132,9 @@ impl<'info> OpenPosition<'info> {
 pub struct ClosePosition<'info> {
     #[account(mut)]
     pub position_manager: Account<'info, PositionManager>,
-    pub state: Account<'info, State>,
     #[account(mut)]
     pub position: Account<'info, Position>,
+    pub state: Account<'info, State>,
     /// CHECK: This is not dangerous because we don't read or write from this account
     pub price_account_info: AccountInfo<'info>,
     #[account(mut)]
@@ -151,7 +151,7 @@ impl<'info> ClosePosition<'info> {
         let cpi_accounts = Transfer {
             from: self.transfer_from.to_account_info(),
             to: self.transfer_to.to_account_info(),
-            authority: self.signer.to_account_info(),
+            authority: self.state.to_account_info(),
         };
         CpiContext::new(self.token_program.to_account_info(), cpi_accounts)
     }
