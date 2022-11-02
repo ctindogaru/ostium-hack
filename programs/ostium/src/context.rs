@@ -39,9 +39,7 @@ pub struct InitializePositionManager<'info> {
 }
 
 #[derive(Accounts)]
-pub struct Deposit<'info> {
-    #[account(mut)]
-    pub position_manager: Account<'info, PositionManager>,
+pub struct DepositCollateral<'info> {
     #[account(mut)]
     pub position: Account<'info, Position>,
     #[account(mut)]
@@ -52,7 +50,7 @@ pub struct Deposit<'info> {
     pub token_program: Program<'info, Token>,
 }
 
-impl<'info> Deposit<'info> {
+impl<'info> DepositCollateral<'info> {
     pub fn into_transfer_context(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
         let cpi_accounts = Transfer {
             from: self.transfer_from.to_account_info(),
@@ -64,9 +62,7 @@ impl<'info> Deposit<'info> {
 }
 
 #[derive(Accounts)]
-pub struct Withdraw<'info> {
-    #[account(mut)]
-    pub position_manager: Account<'info, PositionManager>,
+pub struct WithdrawCollateral<'info> {
     #[account(mut)]
     pub position: Account<'info, Position>,
     pub state: Account<'info, State>,
@@ -78,7 +74,7 @@ pub struct Withdraw<'info> {
     pub token_program: Program<'info, Token>,
 }
 
-impl<'info> Withdraw<'info> {
+impl<'info> WithdrawCollateral<'info> {
     pub fn into_transfer_context(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
         let cpi_accounts = Transfer {
             from: self.transfer_from.to_account_info(),
@@ -130,8 +126,6 @@ impl<'info> OpenPosition<'info> {
 
 #[derive(Accounts)]
 pub struct ClosePosition<'info> {
-    #[account(mut)]
-    pub position_manager: Account<'info, PositionManager>,
     #[account(mut)]
     pub position: Account<'info, Position>,
     pub state: Account<'info, State>,

@@ -43,14 +43,12 @@ pub mod ostium {
         Ok(())
     }
 
-    pub fn deposit_collateral(ctx: Context<Deposit>, amount: u64) -> Result<()> {
+    pub fn deposit_collateral(ctx: Context<DepositCollateral>, amount: u64) -> Result<()> {
         msg!("Ostium: DEPOSIT COLLATERAL");
 
         let position = &mut ctx.accounts.position;
-        let position_manager = &mut ctx.accounts.position_manager;
         require!(
-            position_manager.owner == *ctx.accounts.signer.key
-                && position.owner == *ctx.accounts.signer.key,
+            position.owner == *ctx.accounts.signer.key,
             error::ErrorCode::PermissionDenied
         );
 
@@ -61,14 +59,12 @@ pub mod ostium {
         Ok(())
     }
 
-    pub fn withdraw_collateral(ctx: Context<Withdraw>, amount: u64) -> Result<()> {
+    pub fn withdraw_collateral(ctx: Context<WithdrawCollateral>, amount: u64) -> Result<()> {
         msg!("Ostium: WITHDRAW COLLATERAL");
 
         let position = &mut ctx.accounts.position;
-        let position_manager = &mut ctx.accounts.position_manager;
         require!(
-            position_manager.owner == *ctx.accounts.signer.key
-                && position.owner == *ctx.accounts.signer.key,
+            position.owner == *ctx.accounts.signer.key,
             error::ErrorCode::PermissionDenied
         );
         require!(
@@ -131,19 +127,13 @@ pub mod ostium {
     pub fn close_position(ctx: Context<ClosePosition>) -> Result<()> {
         msg!("Ostium: CLOSE POSITION");
         let position = &mut ctx.accounts.position;
-        let position_manager = &mut ctx.accounts.position_manager;
 
         require!(
             position.is_initialized,
             error::ErrorCode::AlreadyInitialized
         );
         require!(
-            position_manager.is_initialized,
-            error::ErrorCode::NotInitialized
-        );
-        require!(
-            position_manager.owner == *ctx.accounts.signer.key
-                && position.owner == *ctx.accounts.signer.key,
+            position.owner == *ctx.accounts.signer.key,
             error::ErrorCode::PermissionDenied
         );
         require!(

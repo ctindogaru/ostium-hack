@@ -164,7 +164,6 @@ describe("ostium", () => {
     await program.methods
       .depositCollateral(new anchor.BN(DEPOSIT_AMOUNT))
       .accounts({
-        positionManager: managerPda,
         position: positionPda,
         transferFrom: userAccount,
         transferTo: ostiumPdaAccount,
@@ -197,7 +196,6 @@ describe("ostium", () => {
     await program.methods
       .withdrawCollateral(new anchor.BN(WITHDRAW_AMOUNT))
       .accounts({
-        positionManager: managerPda,
         position: positionPda,
         state: ostiumPda,
         transferFrom: ostiumPdaAccount,
@@ -231,7 +229,6 @@ describe("ostium", () => {
     await program.methods
       .closePosition()
       .accounts({
-        positionManager: managerPda,
         position: positionPda,
         state: ostiumPda,
         priceAccountInfo: priceFeed.publicKey,
