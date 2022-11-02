@@ -38,7 +38,6 @@ pub mod ostium {
 
         position_manager.is_initialized = true;
         position_manager.owner = *ctx.accounts.signer.key;
-        position_manager.balance = 0;
         position_manager.no_of_positions = 0;
 
         Ok(())
@@ -53,8 +52,6 @@ pub mod ostium {
             error::ErrorCode::PermissionDenied
         );
 
-        position_manager.balance += amount;
-
         token::transfer(ctx.accounts.into_transfer_context(), amount)?;
 
         Ok(())
@@ -68,11 +65,6 @@ pub mod ostium {
             position_manager.owner == *ctx.accounts.signer.key,
             error::ErrorCode::PermissionDenied
         );
-        require!(
-            position_manager.balance >= amount,
-            error::ErrorCode::InsufficientFunds
-        );
-        position_manager.balance -= amount;
 
         let state = &mut ctx.accounts.state;
         let seeds = &[OSTIUM_SEED.as_bytes(), &[state.bump_seed]];
@@ -115,14 +107,11 @@ pub mod ostium {
         position.quantity = quantity;
         position.leverage = leverage;
         position.status = PositionStatus::Open;
-
-        let position_size = position.entry_price * quantity;
-        require!(
-            position_size <= position_manager.balance,
-            error::ErrorCode::InsufficientFunds
-        );
-        position_manager.balance -= position_size;
         position_manager.no_of_positions += 1;
+
+        let collateral = position.entry_price * position.quantity;
+        position.collateral = collateral;
+        token::transfer(ctx.accounts.into_transfer_context(), collateral)?;
 
         Ok(())
     }
@@ -161,11 +150,20 @@ pub mod ostium {
         let current_price = 1800;
         position.exit_price = current_price;
         position.exit_timestamp = Clock::get()?.unix_timestamp as u64;
-        // we assume a long and profitable position for now
-        let pnl =
-            (current_price - position.entry_price) * position.quantity * position.leverage as u64;
 
-        position_manager.balance += position.entry_price * position.quantity + pnl;
+        let pnl = (current_price as i64 - position.entry_price as i64)
+            * position.quantity as i64
+            * position.leverage as i64;
+        let transfer_amount = position.collateral as i64 + pnl;
+        if transfer_amount > 0 {
+            let state = &mut ctx.accounts.state;
+            let seeds = &[OSTIUM_SEED.as_bytes(), &[state.bump_seed]];
+            let signer = &[&seeds[..]];
+            token::transfer(
+                ctx.accounts.into_transfer_context().with_signer(signer),
+                transfer_amount as u64,
+            )?;
+        }
 
         Ok(())
     }
