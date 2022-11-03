@@ -1,7 +1,8 @@
 use anchor_lang::prelude::*;
 use pyth_sdk_solana::{load_price_feed_from_account_info, Price, PriceFeed};
 
-pub const UNITS_IN_ONE_QUANTITY: u64 = 10_000;
+pub const UNITS_IN_ONE_QUANTITY: u64 = 100_000_000; // it means 1 ounce of gold = 10^8
+pub const MIN_QUANTITY: u64 = 10_000; // minimum quantity required for opening a position
 const USDC_DECIMALS: u32 = 6;
 
 // it always enforces a precision of 6 decimals
@@ -27,4 +28,9 @@ pub fn should_be_liquidated(collateral: i64, pnl: i64) -> bool {
     let ratio = remaining_collateral * 10 / collateral;
     // if the ratio is less than 20%, then liquidate the position
     ratio < 2
+}
+
+pub fn get_ostium_fee(quantity: u64) -> u64 {
+    // it represents a 5% fee
+    quantity * 5 / 10_000
 }

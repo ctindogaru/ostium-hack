@@ -20,4 +20,7 @@ pub enum ErrorCode {
     // 5
     #[msg("The position was opened for a different asset.")]
     WrongAsset,
+    // 6
+    #[msg("You need more quantity to open a position.")]
+    MinimumQuantity,
 }

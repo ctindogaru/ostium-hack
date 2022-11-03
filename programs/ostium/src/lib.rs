@@ -4,7 +4,7 @@ pub mod error;
 pub mod utils;
 use account::*;
 use anchor_lang::prelude::*;
-use anchor_spl::token;
+use anchor_spl::token::{self, Transfer};
 use context::*;
 use utils::*;
 
@@ -110,6 +110,9 @@ pub mod ostium {
             position_manager.owner == *ctx.accounts.signer.key,
             error::ErrorCode::PermissionDenied
         );
+        require!(quantity > MIN_QUANTITY, error::ErrorCode::MinimumQuantity);
+
+        let fee_in_quantity = get_ostium_fee(quantity);
 
         // let price_account_info = &ctx.accounts.price_account_info;
         position.is_initialized = true;
@@ -120,15 +123,39 @@ pub mod ostium {
         position.entry_timestamp = Clock::get()?.unix_timestamp as u64;
         position.exit_price = 0;
         position.exit_timestamp = 0;
-        position.quantity = quantity;
+        position.quantity = quantity - fee_in_quantity;
         position.leverage = leverage;
         position.pos_status = PositionStatus::Open;
         position.pos_type = pos_type;
         position_manager.no_of_positions += 1;
 
-        let initial_collateral = position.entry_price * position.quantity / UNITS_IN_ONE_QUANTITY;
-        position.collateral = initial_collateral;
-        token::transfer(ctx.accounts.into_transfer_context(), initial_collateral)?;
+        {
+            let initial_collateral =
+                position.entry_price * position.quantity / UNITS_IN_ONE_QUANTITY;
+            position.collateral = initial_collateral;
+
+            let cpi_accounts = Transfer {
+                from: ctx.accounts.transfer_from.to_account_info(),
+                to: ctx.accounts.transfer_to.to_account_info(),
+                authority: ctx.accounts.signer.to_account_info(),
+            };
+            let cpi_context =
+                CpiContext::new(ctx.accounts.token_program.to_account_info(), cpi_accounts);
+            token::transfer(cpi_context, initial_collateral)?;
+        }
+
+        {
+            let fee_in_usdc = position.entry_price * fee_in_quantity / UNITS_IN_ONE_QUANTITY;
+
+            let cpi_accounts = Transfer {
+                from: ctx.accounts.transfer_from.to_account_info(),
+                to: ctx.accounts.fee_collector.to_account_info(),
+                authority: ctx.accounts.signer.to_account_info(),
+            };
+            let cpi_context =
+                CpiContext::new(ctx.accounts.token_program.to_account_info(), cpi_accounts);
+            token::transfer(cpi_context, fee_in_usdc)?;
+        }
 
         Ok(())
     }
