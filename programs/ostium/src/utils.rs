@@ -23,11 +23,6 @@ pub fn to_usdc_decimals(current_price: &Price) -> u64 {
 
 pub fn should_be_liquidated(collateral: i64, pnl: i64) -> bool {
     let remaining_collateral = collateral + pnl;
-
-    if remaining_collateral <= 0 {
-        return false;
-    }
-
     let ratio = remaining_collateral * 10 / collateral;
     // if the ratio is less than 20%, then liquidate the position
     ratio < 2

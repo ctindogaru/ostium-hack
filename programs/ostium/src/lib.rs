@@ -199,13 +199,15 @@ pub mod ostium {
             position.exit_timestamp = Clock::get()?.unix_timestamp as u64;
 
             let transfer_amount = position.collateral as i64 + pnl;
-            let state = &mut ctx.accounts.state;
-            let seeds = &[OSTIUM_SEED.as_bytes(), &[state.bump_seed]];
-            let signer = &[&seeds[..]];
-            token::transfer(
-                ctx.accounts.into_transfer_context().with_signer(signer),
-                transfer_amount as u64,
-            )?;
+            if transfer_amount > 0 {
+                let state = &mut ctx.accounts.state;
+                let seeds = &[OSTIUM_SEED.as_bytes(), &[state.bump_seed]];
+                let signer = &[&seeds[..]];
+                token::transfer(
+                    ctx.accounts.into_transfer_context().with_signer(signer),
+                    transfer_amount as u64,
+                )?;
+            }
         }
 
         Ok(())
