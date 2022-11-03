@@ -159,10 +159,14 @@ pub mod ostium {
         position.exit_price = current_price;
         position.exit_timestamp = Clock::get()?.unix_timestamp as u64;
 
-        let pnl = (current_price as i64 - position.entry_price as i64)
+        let mut pnl = (current_price as i64 - position.entry_price as i64)
             * position.leverage as i64
             * position.quantity as i64
             / UNITS_IN_ONE_QUANTITY as i64;
+        if position.pos_type == PositionType::Short {
+            pnl *= -1;
+        }
+
         let transfer_amount = position.collateral as i64 + pnl;
         if transfer_amount > 0 {
             let state = &mut ctx.accounts.state;
@@ -196,10 +200,13 @@ pub mod ostium {
         // let current_price = get_current_price(price_account_info);
         let current_price = 1800 * 10u64.pow(6);
 
-        let pnl = (current_price as i64 - position.entry_price as i64)
+        let mut pnl = (current_price as i64 - position.entry_price as i64)
             * position.leverage as i64
             * position.quantity as i64
             / UNITS_IN_ONE_QUANTITY as i64;
+        if position.pos_type == PositionType::Short {
+            pnl *= -1;
+        }
 
         if should_be_liquidated(position.collateral as i64, pnl) {
             position.pos_status = PositionStatus::Liquidated;
