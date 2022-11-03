@@ -1,6 +1,7 @@
 use anchor_lang::prelude::*;
 use pyth_sdk_solana::{load_price_feed_from_account_info, Price, PriceFeed};
 
+pub const UNITS_IN_ONE_QUANTITY: u64 = 10_000;
 const USDC_DECIMALS: u32 = 6;
 
 // it always enforces a precision of 6 decimals

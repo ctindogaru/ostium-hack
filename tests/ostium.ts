@@ -99,7 +99,8 @@ describe("ostium", () => {
 
     // ------- OPEN POSITION -------
 
-    const QUANTITY = 10;
+    const UNITS_IN_ONE_QUANTITY = 10_000;
+    const QUANTITY = 10 * UNITS_IN_ONE_QUANTITY;
     const LEVERAGE = 50;
     const ENTRY_PRICE = 1650 * 10 ** TOKEN_DECIMALS;
     const EXIT_PRICE = 1800 * 10 ** TOKEN_DECIMALS;
@@ -137,9 +138,9 @@ describe("ostium", () => {
     assert(positionAccount.isInitialized === true);
     assert(positionAccount.owner.equals(user.publicKey));
     assert(positionAccount.asset.equals(priceFeed.publicKey));
-    let initial_collateral = positionAccount.quantity.mul(
-      positionAccount.entryPrice
-    );
+    let initial_collateral = positionAccount.quantity
+      .mul(positionAccount.entryPrice)
+      .div(new anchor.BN(UNITS_IN_ONE_QUANTITY));
     assert(positionAccount.collateral.eq(initial_collateral));
     assert(positionAccount.entryPrice.eq(new anchor.BN(ENTRY_PRICE)));
     assert(positionAccount.exitPrice.eq(new anchor.BN(0)));
@@ -244,7 +245,9 @@ describe("ostium", () => {
     assert(positionAccount.exitPrice.eq(new anchor.BN(EXIT_PRICE)));
     assert(_.isEqual(positionAccount.status, { closed: {} }));
 
-    let pnl = (EXIT_PRICE - ENTRY_PRICE) * QUANTITY * LEVERAGE;
+    let pnl =
+      ((EXIT_PRICE - ENTRY_PRICE) * QUANTITY * LEVERAGE) /
+      UNITS_IN_ONE_QUANTITY;
     accountInfo = await usdc.getAccountInfo(userAccount);
     assert(accountInfo.amount == USER_MINT_AMOUNT + pnl);
     accountInfo = await usdc.getAccountInfo(ostiumPdaAccount);

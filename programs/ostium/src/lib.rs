@@ -120,7 +120,7 @@ pub mod ostium {
         position.status = PositionStatus::Open;
         position_manager.no_of_positions += 1;
 
-        let initial_collateral = position.entry_price * position.quantity;
+        let initial_collateral = position.entry_price * position.quantity / UNITS_IN_ONE_QUANTITY;
         position.collateral = initial_collateral;
         token::transfer(ctx.accounts.into_transfer_context(), initial_collateral)?;
 
@@ -154,8 +154,9 @@ pub mod ostium {
         position.exit_timestamp = Clock::get()?.unix_timestamp as u64;
 
         let pnl = (current_price as i64 - position.entry_price as i64)
+            * position.leverage as i64
             * position.quantity as i64
-            * position.leverage as i64;
+            / UNITS_IN_ONE_QUANTITY as i64;
         let transfer_amount = position.collateral as i64 + pnl;
         if transfer_amount > 0 {
             let state = &mut ctx.accounts.state;
@@ -190,8 +191,9 @@ pub mod ostium {
         let current_price = 1800 * 10u64.pow(6);
 
         let pnl = (current_price as i64 - position.entry_price as i64)
+            * position.leverage as i64
             * position.quantity as i64
-            * position.leverage as i64;
+            / UNITS_IN_ONE_QUANTITY as i64;
 
         if should_be_liquidated(position.collateral as i64, pnl) {
             position.status = PositionStatus::Liquidated;

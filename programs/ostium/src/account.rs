@@ -16,7 +16,7 @@ pub struct Position {
     pub entry_timestamp: u64,   // the timestamp when this position was opened
     pub exit_price: u64,        // the asset price when this position was closed
     pub exit_timestamp: u64,    // the timestamp when this position was closed
-    pub quantity: u64,          // the asset quantity, with no leverage (ex: 0.5 ounce of gold)
+    pub quantity: u64, // the asset quantity, with no leverage. The smaller unit is 0.0001. (ex: 1 ounce of gold will be 10000, 0.5 ounce of gold will be 5000)
     pub leverage: u16, // if the leverage is 10 and the quantity is 0.5, it means that we are actually trading with 5 ounces of gold (0.5 from the user, 4.5 borrowed).
     pub status: PositionStatus, // status of this position
 }
