@@ -91,7 +91,7 @@ pub mod ostium {
     pub fn open_position(
         ctx: Context<OpenPosition>,
         quantity: u64,
-        leverage: u16,
+        leverage: u64,
         pos_type: PositionType,
     ) -> Result<()> {
         msg!("Ostium: OPEN POSITION");
