@@ -120,7 +120,7 @@ describe("ostium", () => {
 
     const priceFeed: anchor.web3.Keypair = anchor.web3.Keypair.generate();
     await program.methods
-      .openPosition(new anchor.BN(QUANTITY), LEVERAGE)
+      .openPosition(new anchor.BN(QUANTITY), LEVERAGE, { long: {} })
       .accounts({
         positionManager: managerPda,
         position: positionPda,
@@ -147,6 +147,7 @@ describe("ostium", () => {
     assert(positionAccount.quantity.eq(new anchor.BN(QUANTITY)));
     assert(positionAccount.leverage === LEVERAGE);
     assert(_.isEqual(positionAccount.posStatus, { open: {} }));
+    assert(_.isEqual(positionAccount.posType, { long: {} }));
 
     managerAccount = await program.account.positionManager.fetch(managerPda);
     assert(managerAccount.noOfPositions.eq(new anchor.BN(1)));

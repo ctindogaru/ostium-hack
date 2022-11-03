@@ -88,7 +88,12 @@ pub mod ostium {
         Ok(())
     }
 
-    pub fn open_position(ctx: Context<OpenPosition>, quantity: u64, leverage: u16) -> Result<()> {
+    pub fn open_position(
+        ctx: Context<OpenPosition>,
+        quantity: u64,
+        leverage: u16,
+        pos_type: PositionType,
+    ) -> Result<()> {
         msg!("Ostium: OPEN POSITION");
         let position = &mut ctx.accounts.position;
         let position_manager = &mut ctx.accounts.position_manager;
@@ -118,6 +123,7 @@ pub mod ostium {
         position.quantity = quantity;
         position.leverage = leverage;
         position.pos_status = PositionStatus::Open;
+        position.pos_type = pos_type;
         position_manager.no_of_positions += 1;
 
         let initial_collateral = position.entry_price * position.quantity / UNITS_IN_ONE_QUANTITY;
