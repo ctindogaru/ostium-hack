@@ -117,7 +117,7 @@ pub mod ostium {
         position.exit_timestamp = 0;
         position.quantity = quantity;
         position.leverage = leverage;
-        position.status = PositionStatus::Open;
+        position.pos_status = PositionStatus::Open;
         position_manager.no_of_positions += 1;
 
         let initial_collateral = position.entry_price * position.quantity / UNITS_IN_ONE_QUANTITY;
@@ -137,7 +137,7 @@ pub mod ostium {
             error::ErrorCode::PermissionDenied
         );
         require!(
-            position.status == PositionStatus::Open,
+            position.pos_status == PositionStatus::Open,
             error::ErrorCode::PositionNotOpened
         );
         require!(
@@ -145,7 +145,7 @@ pub mod ostium {
             error::ErrorCode::WrongAsset
         );
 
-        position.status = PositionStatus::Closed;
+        position.pos_status = PositionStatus::Closed;
 
         // let price_account_info = &ctx.accounts.price_account_info;
         // let current_price = get_current_price(price_account_info);
@@ -178,7 +178,7 @@ pub mod ostium {
 
         require!(position.is_initialized, error::ErrorCode::NotInitialized);
         require!(
-            position.status == PositionStatus::Open,
+            position.pos_status == PositionStatus::Open,
             error::ErrorCode::PositionNotOpened
         );
         require!(
@@ -196,7 +196,7 @@ pub mod ostium {
             / UNITS_IN_ONE_QUANTITY as i64;
 
         if should_be_liquidated(position.collateral as i64, pnl) {
-            position.status = PositionStatus::Liquidated;
+            position.pos_status = PositionStatus::Liquidated;
             position.exit_price = current_price;
             position.exit_timestamp = Clock::get()?.unix_timestamp as u64;
 

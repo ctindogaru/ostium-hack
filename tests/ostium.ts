@@ -146,7 +146,7 @@ describe("ostium", () => {
     assert(positionAccount.exitPrice.eq(new anchor.BN(0)));
     assert(positionAccount.quantity.eq(new anchor.BN(QUANTITY)));
     assert(positionAccount.leverage === LEVERAGE);
-    assert(_.isEqual(positionAccount.status, { open: {} }));
+    assert(_.isEqual(positionAccount.posStatus, { open: {} }));
 
     managerAccount = await program.account.positionManager.fetch(managerPda);
     assert(managerAccount.noOfPositions.eq(new anchor.BN(1)));
@@ -243,7 +243,7 @@ describe("ostium", () => {
 
     positionAccount = await program.account.position.fetch(positionPda);
     assert(positionAccount.exitPrice.eq(new anchor.BN(EXIT_PRICE)));
-    assert(_.isEqual(positionAccount.status, { closed: {} }));
+    assert(_.isEqual(positionAccount.posStatus, { closed: {} }));
 
     let pnl =
       ((EXIT_PRICE - ENTRY_PRICE) * QUANTITY * LEVERAGE) /
