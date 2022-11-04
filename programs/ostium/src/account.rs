@@ -3,7 +3,9 @@ use anchor_lang::prelude::*;
 #[account]
 pub struct State {
     pub is_initialized: bool,
-    pub bump_seed: u8,
+    pub admin: Pubkey,
+    pub ostium_seed: u8,
+    pub fee_collector_seed: u8,
 }
 
 #[account]

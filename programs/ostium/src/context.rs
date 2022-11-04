@@ -39,6 +39,29 @@ pub struct InitializePositionManager<'info> {
 }
 
 #[derive(Accounts)]
+pub struct CollectFees<'info> {
+    #[account(mut)]
+    pub state: Account<'info, State>,
+    #[account(mut)]
+    pub transfer_from: Account<'info, TokenAccount>,
+    #[account(mut)]
+    pub transfer_to: Account<'info, TokenAccount>,
+    pub signer: Signer<'info>,
+    pub token_program: Program<'info, Token>,
+}
+
+impl<'info> CollectFees<'info> {
+    pub fn into_transfer_context(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
+        let cpi_accounts = Transfer {
+            from: self.transfer_from.to_account_info(),
+            to: self.transfer_to.to_account_info(),
+            authority: self.state.to_account_info(),
+        };
+        CpiContext::new(self.token_program.to_account_info(), cpi_accounts)
+    }
+}
+
+#[derive(Accounts)]
 pub struct DepositCollateral<'info> {
     #[account(mut)]
     pub position: Account<'info, Position>,

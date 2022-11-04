@@ -24,6 +24,7 @@ describe("ostium", () => {
   let ostiumPdaAccount;
 
   let feeCollectorPda;
+  let feeCollectorBump;
   let feeCollectorPdaAccount;
 
   let managerPda;
@@ -40,8 +41,14 @@ describe("ostium", () => {
       [OSTIUM_SEED],
       program.programId
     );
+    [feeCollectorPda, feeCollectorBump] =
+      await anchor.web3.PublicKey.findProgramAddress(
+        [FEE_COLLECTOR_SEED],
+        program.programId
+      );
+
     await program.methods
-      .initialize(ostiumBump)
+      .initialize(ostiumBump, feeCollectorBump)
       .accounts({
         state: ostiumPda,
         signer: wallet.publicKey,
@@ -50,7 +57,7 @@ describe("ostium", () => {
       .rpc();
 
     const stateAccount = await program.account.state.fetch(ostiumPda);
-    assert.ok(stateAccount.bumpSeed === ostiumBump);
+    assert.ok(stateAccount.ostiumSeed === ostiumBump);
     assert.ok(stateAccount.isInitialized === true);
 
     await airdropSolTokens(connection, user);
@@ -80,11 +87,6 @@ describe("ostium", () => {
 
   it("end-to-end testing", async () => {
     // ------- INITIAL SETUP -------
-
-    [feeCollectorPda] = await anchor.web3.PublicKey.findProgramAddress(
-      [FEE_COLLECTOR_SEED],
-      program.programId
-    );
 
     usdc = await Token.createMint(
       connection,

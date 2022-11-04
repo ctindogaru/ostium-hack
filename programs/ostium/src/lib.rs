@@ -9,6 +9,7 @@ use context::*;
 use utils::*;
 
 const OSTIUM_SEED: &str = "ostium";
+const FEE_COLLECTOR_SEED: &str = "fee-collector";
 
 declare_id!("DVCuZ7CgEi3WJrr1RMUhEP2eYW8PFKZXxw67RK9B9W6y");
 
@@ -16,14 +17,20 @@ declare_id!("DVCuZ7CgEi3WJrr1RMUhEP2eYW8PFKZXxw67RK9B9W6y");
 pub mod ostium {
     use super::*;
 
-    pub fn initialize(ctx: Context<Initialize>, bump: u8) -> Result<()> {
+    pub fn initialize(
+        ctx: Context<Initialize>,
+        ostium_seed: u8,
+        fee_collector_seed: u8,
+    ) -> Result<()> {
         msg!("Ostium: INITIALIZE");
         let state = &mut ctx.accounts.state;
 
         require!(!state.is_initialized, error::ErrorCode::AlreadyInitialized);
 
         state.is_initialized = true;
-        state.bump_seed = bump;
+        state.admin = *ctx.accounts.signer.key;
+        state.fee_collector_seed = fee_collector_seed;
+        state.ostium_seed = ostium_seed;
 
         Ok(())
     }
@@ -40,6 +47,26 @@ pub mod ostium {
         position_manager.is_initialized = true;
         position_manager.owner = *ctx.accounts.signer.key;
         position_manager.no_of_positions = 0;
+
+        Ok(())
+    }
+
+    pub fn collect_fees(ctx: Context<CollectFees>, amount: u64) -> Result<()> {
+        msg!("Ostium: COLLECT FEES");
+
+        let state = &mut ctx.accounts.state;
+        require!(state.is_initialized, error::ErrorCode::NotInitialized);
+        require!(
+            state.admin == *ctx.accounts.signer.key,
+            error::ErrorCode::PermissionDenied
+        );
+
+        let seeds = &[FEE_COLLECTOR_SEED.as_bytes(), &[state.fee_collector_seed]];
+        let signer = &[&seeds[..]];
+        token::transfer(
+            ctx.accounts.into_transfer_context().with_signer(signer),
+            amount,
+        )?;
 
         Ok(())
     }
@@ -78,7 +105,7 @@ pub mod ostium {
         position.collateral -= amount;
 
         let state = &mut ctx.accounts.state;
-        let seeds = &[OSTIUM_SEED.as_bytes(), &[state.bump_seed]];
+        let seeds = &[OSTIUM_SEED.as_bytes(), &[state.ostium_seed]];
         let signer = &[&seeds[..]];
         token::transfer(
             ctx.accounts.into_transfer_context().with_signer(signer),
@@ -197,7 +224,7 @@ pub mod ostium {
         let transfer_amount = position.collateral as i64 + pnl;
         if transfer_amount > 0 {
             let state = &mut ctx.accounts.state;
-            let seeds = &[OSTIUM_SEED.as_bytes(), &[state.bump_seed]];
+            let seeds = &[OSTIUM_SEED.as_bytes(), &[state.ostium_seed]];
             let signer = &[&seeds[..]];
             token::transfer(
                 ctx.accounts.into_transfer_context().with_signer(signer),
@@ -243,7 +270,7 @@ pub mod ostium {
             let transfer_amount = position.collateral as i64 + pnl;
             if transfer_amount > 0 {
                 let state = &mut ctx.accounts.state;
-                let seeds = &[OSTIUM_SEED.as_bytes(), &[state.bump_seed]];
+                let seeds = &[OSTIUM_SEED.as_bytes(), &[state.ostium_seed]];
                 let signer = &[&seeds[..]];
                 token::transfer(
                     ctx.accounts.into_transfer_context().with_signer(signer),
