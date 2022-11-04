@@ -27,8 +27,8 @@ describe("ostium", () => {
   let feeCollectorBump;
   let feeCollectorPdaAccount;
 
-  let managerPda;
-  let managerBump;
+  let positionManagerPda;
+  let positionManagerBump;
 
   const TOKEN_DECIMALS = 6;
   const USER_MINT_AMOUNT = 1_000_000 * 10 ** TOKEN_DECIMALS;
@@ -57,20 +57,21 @@ describe("ostium", () => {
       .rpc();
 
     const stateAccount = await program.account.state.fetch(ostiumPda);
-    assert.ok(stateAccount.ostiumSeed === ostiumBump);
+    assert.ok(stateAccount.ostiumBump === ostiumBump);
     assert.ok(stateAccount.isInitialized === true);
 
     await airdropSolTokens(connection, user);
 
-    [managerPda, managerBump] = await anchor.web3.PublicKey.findProgramAddress(
-      [Buffer.from("position-manager"), user.publicKey.toBuffer()],
-      program.programId
-    );
+    [positionManagerPda, positionManagerBump] =
+      await anchor.web3.PublicKey.findProgramAddress(
+        [Buffer.from("position-manager"), user.publicKey.toBuffer()],
+        program.programId
+      );
 
     await program.methods
       .initializePositionManager()
       .accounts({
-        positionManager: managerPda,
+        positionManager: positionManagerPda,
         signer: user.publicKey,
         systemProgram: SystemProgram.programId,
       })
@@ -78,7 +79,7 @@ describe("ostium", () => {
       .rpc();
 
     let managerAccount = await program.account.positionManager.fetch(
-      managerPda
+      positionManagerPda
     );
     assert(managerAccount.isInitialized === true);
     assert(managerAccount.owner.equals(user.publicKey));
@@ -119,7 +120,7 @@ describe("ostium", () => {
     const EXIT_PRICE = 1800 * 10 ** TOKEN_DECIMALS;
 
     let managerAccount = await program.account.positionManager.fetch(
-      managerPda
+      positionManagerPda
     );
     let [positionPda, _positionBump] =
       await anchor.web3.PublicKey.findProgramAddress(
@@ -137,7 +138,7 @@ describe("ostium", () => {
         long: {},
       })
       .accounts({
-        positionManager: managerPda,
+        positionManager: positionManagerPda,
         position: positionPda,
         priceAccountInfo: priceFeed.publicKey,
         feeCollector: feeCollectorPdaAccount,
@@ -174,7 +175,9 @@ describe("ostium", () => {
     assert(_.isEqual(positionAccount.posStatus, { open: {} }));
     assert(_.isEqual(positionAccount.posType, { long: {} }));
 
-    managerAccount = await program.account.positionManager.fetch(managerPda);
+    managerAccount = await program.account.positionManager.fetch(
+      positionManagerPda
+    );
     assert(managerAccount.noOfPositions.eq(new anchor.BN(1)));
 
     accountInfo = await usdc.getAccountInfo(userAccount);
