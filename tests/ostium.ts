@@ -12,7 +12,7 @@ describe("ostium", () => {
   const provider = anchor.AnchorProvider.env();
   anchor.setProvider(provider);
   const connection = provider.connection;
-  const wallet = provider.wallet;
+  const admin = provider.wallet;
   const program = anchor.workspace.Ostium as Program<Ostium>;
 
   const user: anchor.web3.Keypair = anchor.web3.Keypair.generate();
@@ -51,7 +51,7 @@ describe("ostium", () => {
       .initialize(ostiumBump, feeCollectorBump)
       .accounts({
         state: ostiumPda,
-        signer: wallet.publicKey,
+        signer: admin.publicKey,
         systemProgram: SystemProgram.programId,
       })
       .rpc();
@@ -291,5 +291,26 @@ describe("ostium", () => {
     assert(accountInfo.amount == USER_MINT_AMOUNT + pnl - feeInUsdc.toNumber());
     accountInfo = await usdc.getAccountInfo(ostiumPdaAccount);
     assert(accountInfo.amount == OSTIUM_MINT_AMOUNT - pnl);
+
+    // ------- COLLECT FEES -------
+
+    let adminAccount = await usdc.createAccount(admin.publicKey);
+    accountInfo = await usdc.getAccountInfo(adminAccount);
+    assert(accountInfo.amount == 0);
+
+    await program.methods
+      .collectFees(feeInUsdc)
+      .accounts({
+        state: ostiumPda,
+        transferFrom: feeCollectorPdaAccount,
+        transferTo: adminAccount,
+        transferAuthority: feeCollectorPda,
+        signer: admin.publicKey,
+        tokenProgram: TOKEN_PROGRAM_ID,
+      })
+      .rpc();
+
+    accountInfo = await usdc.getAccountInfo(adminAccount);
+    assert(accountInfo.amount == feeInUsdc.toNumber());
   });
 });
