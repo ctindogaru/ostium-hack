@@ -40,7 +40,11 @@ pub struct InitializePositionManager<'info> {
 
 #[derive(Accounts)]
 pub struct CollectFees<'info> {
-    #[account(mut)]
+    #[account(
+        seeds = [b"ostium".as_ref()],
+        bump = state.ostium_bump,
+        constraint = state.to_account_info().owner == program_id,
+    )]
     pub state: Account<'info, State>,
     #[account(mut)]
     pub transfer_from: Account<'info, TokenAccount>,
@@ -88,6 +92,11 @@ impl<'info> DepositCollateral<'info> {
 pub struct WithdrawCollateral<'info> {
     #[account(mut)]
     pub position: Account<'info, Position>,
+    #[account(
+        seeds = [b"ostium".as_ref()],
+        bump = state.ostium_bump,
+        constraint = state.to_account_info().owner == program_id,
+    )]
     pub state: Account<'info, State>,
     #[account(mut)]
     pub transfer_from: Account<'info, TokenAccount>,
@@ -142,6 +151,11 @@ pub struct OpenPosition<'info> {
 pub struct ClosePosition<'info> {
     #[account(mut)]
     pub position: Account<'info, Position>,
+    #[account(
+        seeds = [b"ostium".as_ref()],
+        bump = state.ostium_bump,
+        constraint = state.to_account_info().owner == program_id,
+    )]
     pub state: Account<'info, State>,
     /// CHECK: This is not dangerous because we don't read or write from this account
     pub price_account_info: AccountInfo<'info>,
@@ -169,6 +183,11 @@ impl<'info> ClosePosition<'info> {
 pub struct LiquidatePosition<'info> {
     #[account(mut)]
     pub position: Account<'info, Position>,
+    #[account(
+        seeds = [b"ostium".as_ref()],
+        bump = state.ostium_bump,
+        constraint = state.to_account_info().owner == program_id,
+    )]
     pub state: Account<'info, State>,
     /// CHECK: This is not dangerous because we don't read or write from this account
     pub price_account_info: AccountInfo<'info>,
