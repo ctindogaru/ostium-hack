@@ -188,7 +188,7 @@ pub mod ostium {
         Ok(())
     }
 
-    pub fn close_position(ctx: Context<ClosePosition>) -> Result<()> {
+    pub fn close_position(ctx: Context<ClosePosition>, percentage: u8) -> Result<()> {
         msg!("Ostium: CLOSE POSITION");
         let position = &mut ctx.accounts.position;
 
@@ -205,25 +205,37 @@ pub mod ostium {
             position.asset == *ctx.accounts.price_account_info.key,
             error::ErrorCode::WrongAsset
         );
+        require!(
+            percentage > 0 && percentage <= 100,
+            error::ErrorCode::InvalidPercentage
+        );
 
-        position.pos_status = PositionStatus::Closed;
+        let closed_quantity = position.quantity * percentage as u64 / 100;
+        let closed_collateral = position.collateral * percentage as u64 / 100;
 
         // let price_account_info = &ctx.accounts.price_account_info;
         // let current_price = get_current_price(price_account_info);
         let current_price = 1800 * 10u64.pow(6);
-        position.exit_price = current_price;
-        position.exit_timestamp = Clock::get()?.unix_timestamp as u64;
+
+        if percentage == 100 {
+            position.exit_price = current_price;
+            position.exit_timestamp = Clock::get()?.unix_timestamp as u64;
+            position.pos_status = PositionStatus::Closed;
+        } else {
+            position.quantity -= closed_quantity;
+            position.collateral -= closed_collateral;
+        }
 
         let mut pnl = (current_price as i64 - position.entry_price as i64)
             * position.leverage as i64
             / UNITS_IN_ONE_LEVERAGE as i64
-            * position.quantity as i64
+            * closed_quantity as i64
             / UNITS_IN_ONE_QUANTITY as i64;
         if position.pos_type == PositionType::Short {
             pnl *= -1;
         }
 
-        let transfer_amount = position.collateral as i64 + pnl;
+        let transfer_amount = closed_collateral as i64 + pnl;
         if transfer_amount > 0 {
             let state = &mut ctx.accounts.state;
             let seeds = &[OSTIUM_SEED.as_bytes(), &[state.ostium_bump]];

@@ -23,7 +23,10 @@ pub enum ErrorCode {
     // 6
     #[msg("You need more quantity to open a position.")]
     MinimumQuantity,
-    // 6
+    // 7
     #[msg("You need more leverage to open a position.")]
     MinimumLeverage,
+    // 8
+    #[msg("The percentage is not in range.")]
+    InvalidPercentage,
 }

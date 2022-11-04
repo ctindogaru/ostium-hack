@@ -266,7 +266,7 @@ describe("ostium", () => {
     // ------- CLOSE POSITION -------
 
     await program.methods
-      .closePosition()
+      .closePosition(100)
       .accounts({
         position: positionPda,
         state: ostiumPda,
