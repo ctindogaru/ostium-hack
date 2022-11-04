@@ -31,6 +31,6 @@ pub fn should_be_liquidated(collateral: i64, pnl: i64) -> bool {
 }
 
 pub fn get_ostium_fee(quantity: u64) -> u64 {
-    // it represents a 5% fee
+    // it represents a 0.05% fee
     quantity * 5 / 10_000
 }

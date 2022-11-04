@@ -112,7 +112,7 @@ pub mod ostium {
         );
         require!(quantity > MIN_QUANTITY, error::ErrorCode::MinimumQuantity);
 
-        let fee_in_quantity = get_ostium_fee(quantity);
+        let fee_in_quantity = get_ostium_fee(quantity * leverage);
 
         // let price_account_info = &ctx.accounts.price_account_info;
         position.is_initialized = true;
