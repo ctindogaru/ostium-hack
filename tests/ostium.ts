@@ -3,7 +3,7 @@ import { Program } from "@project-serum/anchor";
 import { assert } from "chai";
 import { TOKEN_PROGRAM_ID, Token } from "@solana/spl-token";
 import { Ostium } from "../target/types/ostium";
-import { airdropSolTokens, OSTIUM_SEED } from "./utils";
+import { airdropSolTokens, FEE_COLLECTOR_SEED, OSTIUM_SEED } from "./utils";
 import _ from "lodash";
 
 const { SystemProgram } = anchor.web3;
@@ -22,6 +22,9 @@ describe("ostium", () => {
   let ostiumPda;
   let ostiumBump;
   let ostiumPdaAccount;
+
+  let feeCollectorPda;
+  let feeCollectorPdaAccount;
 
   let managerPda;
   let managerBump;
@@ -78,6 +81,11 @@ describe("ostium", () => {
   it("end-to-end testing", async () => {
     // ------- INITIAL SETUP -------
 
+    [feeCollectorPda] = await anchor.web3.PublicKey.findProgramAddress(
+      [FEE_COLLECTOR_SEED],
+      program.programId
+    );
+
     usdc = await Token.createMint(
       connection,
       user,
@@ -90,16 +98,19 @@ describe("ostium", () => {
     await usdc.mintTo(userAccount, user, [], USER_MINT_AMOUNT);
     ostiumPdaAccount = await usdc.createAccount(ostiumPda);
     await usdc.mintTo(ostiumPdaAccount, user, [], OSTIUM_MINT_AMOUNT);
+    feeCollectorPdaAccount = await usdc.createAccount(feeCollectorPda);
 
     let accountInfo;
     accountInfo = await usdc.getAccountInfo(userAccount);
     assert(accountInfo.amount == USER_MINT_AMOUNT);
     accountInfo = await usdc.getAccountInfo(ostiumPdaAccount);
     assert(accountInfo.amount == OSTIUM_MINT_AMOUNT);
+    accountInfo = await usdc.getAccountInfo(feeCollectorPdaAccount);
+    assert(accountInfo.amount == 0);
 
     // ------- OPEN POSITION -------
 
-    const UNITS_IN_ONE_QUANTITY = 10_000;
+    const UNITS_IN_ONE_QUANTITY = 100_000_000;
     const QUANTITY = 10 * UNITS_IN_ONE_QUANTITY;
     const LEVERAGE = 50;
     const ENTRY_PRICE = 1650 * 10 ** TOKEN_DECIMALS;
@@ -120,11 +131,14 @@ describe("ostium", () => {
 
     const priceFeed: anchor.web3.Keypair = anchor.web3.Keypair.generate();
     await program.methods
-      .openPosition(new anchor.BN(QUANTITY), LEVERAGE, { long: {} })
+      .openPosition(new anchor.BN(QUANTITY), new anchor.BN(LEVERAGE), {
+        long: {},
+      })
       .accounts({
         positionManager: managerPda,
         position: positionPda,
         priceAccountInfo: priceFeed.publicKey,
+        feeCollector: feeCollectorPdaAccount,
         transferFrom: userAccount,
         transferTo: ostiumPdaAccount,
         signer: user.publicKey,
@@ -135,17 +149,26 @@ describe("ostium", () => {
       .rpc();
 
     let positionAccount = await program.account.position.fetch(positionPda);
+    let feeInQuantity = (QUANTITY * LEVERAGE * 5) / 10_000;
+    let feeInUsdc = positionAccount.entryPrice
+      .mul(new anchor.BN(feeInQuantity))
+      .div(new anchor.BN(UNITS_IN_ONE_QUANTITY));
+
     assert(positionAccount.isInitialized === true);
     assert(positionAccount.owner.equals(user.publicKey));
     assert(positionAccount.asset.equals(priceFeed.publicKey));
+    assert(
+      positionAccount.quantity.eq(
+        new anchor.BN(QUANTITY).sub(new anchor.BN(feeInQuantity))
+      )
+    );
+    assert(positionAccount.leverage.eq(new anchor.BN(LEVERAGE)));
     let initial_collateral = positionAccount.quantity
       .mul(positionAccount.entryPrice)
       .div(new anchor.BN(UNITS_IN_ONE_QUANTITY));
     assert(positionAccount.collateral.eq(initial_collateral));
     assert(positionAccount.entryPrice.eq(new anchor.BN(ENTRY_PRICE)));
     assert(positionAccount.exitPrice.eq(new anchor.BN(0)));
-    assert(positionAccount.quantity.eq(new anchor.BN(QUANTITY)));
-    assert(positionAccount.leverage === LEVERAGE);
     assert(_.isEqual(positionAccount.posStatus, { open: {} }));
     assert(_.isEqual(positionAccount.posType, { long: {} }));
 
@@ -154,12 +177,15 @@ describe("ostium", () => {
 
     accountInfo = await usdc.getAccountInfo(userAccount);
     assert(
-      accountInfo.amount == USER_MINT_AMOUNT - initial_collateral.toNumber()
+      accountInfo.amount ==
+        USER_MINT_AMOUNT - initial_collateral.toNumber() - feeInUsdc.toNumber()
     );
     accountInfo = await usdc.getAccountInfo(ostiumPdaAccount);
     assert(
       accountInfo.amount == OSTIUM_MINT_AMOUNT + initial_collateral.toNumber()
     );
+    accountInfo = await usdc.getAccountInfo(feeCollectorPdaAccount);
+    assert(accountInfo.amount == feeInUsdc.toNumber());
 
     // ------- DEPOSIT COLLATERAL -------
 
@@ -185,7 +211,9 @@ describe("ostium", () => {
     accountInfo = await usdc.getAccountInfo(userAccount);
     assert(
       accountInfo.amount ==
-        USER_MINT_AMOUNT - positionAccount.collateral.toNumber()
+        USER_MINT_AMOUNT -
+          positionAccount.collateral.toNumber() -
+          feeInUsdc.toNumber()
     );
     accountInfo = await usdc.getAccountInfo(ostiumPdaAccount);
     assert(
@@ -218,7 +246,9 @@ describe("ostium", () => {
     accountInfo = await usdc.getAccountInfo(userAccount);
     assert(
       accountInfo.amount ==
-        USER_MINT_AMOUNT - positionAccount.collateral.toNumber()
+        USER_MINT_AMOUNT -
+          positionAccount.collateral.toNumber() -
+          feeInUsdc.toNumber()
     );
     accountInfo = await usdc.getAccountInfo(ostiumPdaAccount);
     assert(
@@ -247,10 +277,10 @@ describe("ostium", () => {
     assert(_.isEqual(positionAccount.posStatus, { closed: {} }));
 
     let pnl =
-      ((EXIT_PRICE - ENTRY_PRICE) * QUANTITY * LEVERAGE) /
+      ((EXIT_PRICE - ENTRY_PRICE) * (QUANTITY - feeInQuantity) * LEVERAGE) /
       UNITS_IN_ONE_QUANTITY;
     accountInfo = await usdc.getAccountInfo(userAccount);
-    assert(accountInfo.amount == USER_MINT_AMOUNT + pnl);
+    assert(accountInfo.amount == USER_MINT_AMOUNT + pnl - feeInUsdc.toNumber());
     accountInfo = await usdc.getAccountInfo(ostiumPdaAccount);
     assert(accountInfo.amount == OSTIUM_MINT_AMOUNT - pnl);
   });
