@@ -138,8 +138,9 @@ pub mod ostium {
             error::ErrorCode::PermissionDenied
         );
         require!(quantity > MIN_QUANTITY, error::ErrorCode::MinimumQuantity);
+        require!(quantity > MIN_LEVERAGE, error::ErrorCode::MinimumLeverage);
 
-        let fee_in_quantity = get_ostium_fee(quantity * leverage);
+        let fee_in_quantity = get_ostium_fee(quantity * leverage / UNITS_IN_ONE_LEVERAGE);
 
         // let price_account_info = &ctx.accounts.price_account_info;
         position.is_initialized = true;
@@ -215,6 +216,7 @@ pub mod ostium {
 
         let mut pnl = (current_price as i64 - position.entry_price as i64)
             * position.leverage as i64
+            / UNITS_IN_ONE_LEVERAGE as i64
             * position.quantity as i64
             / UNITS_IN_ONE_QUANTITY as i64;
         if position.pos_type == PositionType::Short {
@@ -256,6 +258,7 @@ pub mod ostium {
 
         let mut pnl = (current_price as i64 - position.entry_price as i64)
             * position.leverage as i64
+            / UNITS_IN_ONE_LEVERAGE as i64
             * position.quantity as i64
             / UNITS_IN_ONE_QUANTITY as i64;
         if position.pos_type == PositionType::Short {

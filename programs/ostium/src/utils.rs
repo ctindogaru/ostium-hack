@@ -3,6 +3,8 @@ use pyth_sdk_solana::{load_price_feed_from_account_info, Price, PriceFeed};
 
 pub const UNITS_IN_ONE_QUANTITY: u64 = 100_000_000; // it means 1 ounce of gold = 10^8
 pub const MIN_QUANTITY: u64 = 10_000; // minimum quantity required for opening a position
+pub const UNITS_IN_ONE_LEVERAGE: u64 = 100; // it means 2x leverage = 200
+pub const MIN_LEVERAGE: u64 = 100; // minimum leverage is 1x
 const USDC_DECIMALS: u32 = 6;
 
 // it always enforces a precision of 6 decimals

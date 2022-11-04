@@ -114,8 +114,9 @@ describe("ostium", () => {
     // ------- OPEN POSITION -------
 
     const UNITS_IN_ONE_QUANTITY = 100_000_000;
+    const UNITS_IN_ONE_LEVERAGE = 100;
     const QUANTITY = 10 * UNITS_IN_ONE_QUANTITY;
-    const LEVERAGE = 50;
+    const LEVERAGE = 50 * UNITS_IN_ONE_LEVERAGE;
     const ENTRY_PRICE = 1650 * 10 ** TOKEN_DECIMALS;
     const EXIT_PRICE = 1800 * 10 ** TOKEN_DECIMALS;
 
@@ -152,7 +153,8 @@ describe("ostium", () => {
       .rpc();
 
     let positionAccount = await program.account.position.fetch(positionPda);
-    let feeInQuantity = (QUANTITY * LEVERAGE * 5) / 10_000;
+    let feeInQuantity =
+      (((QUANTITY * LEVERAGE) / UNITS_IN_ONE_LEVERAGE) * 5) / 10_000;
     let feeInUsdc = positionAccount.entryPrice
       .mul(new anchor.BN(feeInQuantity))
       .div(new anchor.BN(UNITS_IN_ONE_QUANTITY));
@@ -282,7 +284,8 @@ describe("ostium", () => {
     assert(_.isEqual(positionAccount.posStatus, { closed: {} }));
 
     let pnl =
-      ((EXIT_PRICE - ENTRY_PRICE) * (QUANTITY - feeInQuantity) * LEVERAGE) /
+      ((((EXIT_PRICE - ENTRY_PRICE) * LEVERAGE) / UNITS_IN_ONE_LEVERAGE) *
+        (QUANTITY - feeInQuantity)) /
       UNITS_IN_ONE_QUANTITY;
     accountInfo = await usdc.getAccountInfo(userAccount);
     assert(accountInfo.amount == USER_MINT_AMOUNT + pnl - feeInUsdc.toNumber());
