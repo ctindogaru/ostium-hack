@@ -107,7 +107,9 @@ impl<'info> DepositCollateral<'info> {
 
 #[derive(Accounts)]
 pub struct WithdrawCollateral<'info> {
-    #[account(mut)]
+    #[account(mut,
+        constraint = position.to_account_info().owner == program_id,
+    )]
     pub position: Account<'info, Position>,
     #[account(
         seeds = [b"ostium".as_ref()],
@@ -115,9 +117,13 @@ pub struct WithdrawCollateral<'info> {
         constraint = state.to_account_info().owner == program_id,
     )]
     pub state: Account<'info, State>,
-    #[account(mut)]
+    #[account(mut,
+        constraint = &transfer_from.owner == state.to_account_info().key
+    )]
     pub transfer_from: Account<'info, TokenAccount>,
-    #[account(mut)]
+    #[account(mut,
+        constraint = &transfer_to.owner == signer.key
+    )]
     pub transfer_to: Account<'info, TokenAccount>,
     pub signer: Signer<'info>,
     pub token_program: Program<'info, Token>,
