@@ -191,7 +191,9 @@ pub struct OpenPosition<'info> {
 
 #[derive(Accounts)]
 pub struct ClosePosition<'info> {
-    #[account(mut)]
+    #[account(mut,
+        constraint = position.to_account_info().owner == program_id,
+    )]
     pub position: Account<'info, Position>,
     #[account(
         seeds = [b"ostium".as_ref()],
@@ -201,9 +203,13 @@ pub struct ClosePosition<'info> {
     pub state: Account<'info, State>,
     /// CHECK: This is not dangerous because we don't read or write from this account
     pub price_account_info: AccountInfo<'info>,
-    #[account(mut)]
+    #[account(mut,
+        constraint = &transfer_from.owner == state.to_account_info().key
+    )]
     pub transfer_from: Account<'info, TokenAccount>,
-    #[account(mut)]
+    #[account(mut,
+        constraint = &transfer_to.owner == signer.key
+    )]
     pub transfer_to: Account<'info, TokenAccount>,
     #[account(mut)]
     pub signer: Signer<'info>,
