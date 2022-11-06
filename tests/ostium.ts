@@ -131,6 +131,7 @@ describe("ostium", () => {
         long: {},
       })
       .accounts({
+        state: ostiumPda,
         positionManager: positionManagerPda,
         position: positionPda,
         priceAccountInfo: priceFeed.publicKey,

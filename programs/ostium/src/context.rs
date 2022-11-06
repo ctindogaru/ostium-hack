@@ -142,7 +142,20 @@ impl<'info> WithdrawCollateral<'info> {
 
 #[derive(Accounts)]
 pub struct OpenPosition<'info> {
-    #[account(mut)]
+    #[account(
+        seeds = [b"ostium".as_ref()],
+        bump = state.ostium_bump,
+        constraint = state.to_account_info().owner == program_id,
+    )]
+    pub state: Account<'info, State>,
+    #[account(mut,
+        seeds = [
+            b"position-manager".as_ref(),
+            signer.key().as_ref()
+        ],
+        bump,
+        constraint = position_manager.to_account_info().owner == program_id,
+    )]
     pub position_manager: Account<'info, PositionManager>,
     #[account(
         init,
@@ -158,11 +171,17 @@ pub struct OpenPosition<'info> {
     pub position: Account<'info, Position>,
     /// CHECK: This is not dangerous because we don't read or write from this account
     pub price_account_info: AccountInfo<'info>,
-    #[account(mut)]
+    #[account(mut,
+        constraint = &fee_collector.owner == state.to_account_info().key
+    )]
     pub fee_collector: Account<'info, TokenAccount>,
-    #[account(mut)]
+    #[account(mut,
+        constraint = &transfer_from.owner == signer.key
+    )]
     pub transfer_from: Account<'info, TokenAccount>,
-    #[account(mut)]
+    #[account(mut,
+        constraint = &transfer_to.owner == state.to_account_info().key
+    )]
     pub transfer_to: Account<'info, TokenAccount>,
     #[account(mut)]
     pub signer: Signer<'info>,
