@@ -5,7 +5,6 @@ pub struct State {
     pub is_initialized: bool,
     pub admin: Pubkey,
     pub ostium_bump: u8,
-    pub fee_collector_bump: u8,
 }
 
 #[account]

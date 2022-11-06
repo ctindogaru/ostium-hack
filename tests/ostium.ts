@@ -3,7 +3,7 @@ import { Program } from "@project-serum/anchor";
 import { assert } from "chai";
 import { TOKEN_PROGRAM_ID, Token } from "@solana/spl-token";
 import { Ostium } from "../target/types/ostium";
-import { airdropSolTokens, FEE_COLLECTOR_SEED, OSTIUM_SEED } from "./utils";
+import { airdropSolTokens, OSTIUM_SEED } from "./utils";
 import _ from "lodash";
 
 const { SystemProgram } = anchor.web3;
@@ -22,10 +22,7 @@ describe("ostium", () => {
   let ostiumPda;
   let ostiumBump;
   let ostiumPdaAccount;
-
-  let feeCollectorPda;
-  let feeCollectorBump;
-  let feeCollectorPdaAccount;
+  let feeCollectorAccount;
 
   let positionManagerPda;
   let positionManagerBump;
@@ -41,14 +38,9 @@ describe("ostium", () => {
       [OSTIUM_SEED],
       program.programId
     );
-    [feeCollectorPda, feeCollectorBump] =
-      await anchor.web3.PublicKey.findProgramAddress(
-        [FEE_COLLECTOR_SEED],
-        program.programId
-      );
 
     await program.methods
-      .initialize(ostiumBump, feeCollectorBump)
+      .initialize(ostiumBump)
       .accounts({
         state: ostiumPda,
         signer: admin.publicKey,
@@ -101,14 +93,14 @@ describe("ostium", () => {
     await usdc.mintTo(userAccount, user, [], USER_MINT_AMOUNT);
     ostiumPdaAccount = await usdc.createAccount(ostiumPda);
     await usdc.mintTo(ostiumPdaAccount, user, [], OSTIUM_MINT_AMOUNT);
-    feeCollectorPdaAccount = await usdc.createAccount(feeCollectorPda);
+    feeCollectorAccount = await usdc.createAccount(ostiumPda);
 
     let accountInfo;
     accountInfo = await usdc.getAccountInfo(userAccount);
     assert(accountInfo.amount == USER_MINT_AMOUNT);
     accountInfo = await usdc.getAccountInfo(ostiumPdaAccount);
     assert(accountInfo.amount == OSTIUM_MINT_AMOUNT);
-    accountInfo = await usdc.getAccountInfo(feeCollectorPdaAccount);
+    accountInfo = await usdc.getAccountInfo(feeCollectorAccount);
     assert(accountInfo.amount == 0);
 
     // ------- OPEN POSITION -------
@@ -142,7 +134,7 @@ describe("ostium", () => {
         positionManager: positionManagerPda,
         position: positionPda,
         priceAccountInfo: priceFeed.publicKey,
-        feeCollector: feeCollectorPdaAccount,
+        feeCollector: feeCollectorAccount,
         transferFrom: userAccount,
         transferTo: ostiumPdaAccount,
         signer: user.publicKey,
@@ -191,7 +183,7 @@ describe("ostium", () => {
     assert(
       accountInfo.amount == OSTIUM_MINT_AMOUNT + initial_collateral.toNumber()
     );
-    accountInfo = await usdc.getAccountInfo(feeCollectorPdaAccount);
+    accountInfo = await usdc.getAccountInfo(feeCollectorAccount);
     assert(accountInfo.amount == feeInUsdc.toNumber());
 
     // ------- DEPOSIT COLLATERAL -------
@@ -302,9 +294,8 @@ describe("ostium", () => {
       .collectFees(feeInUsdc)
       .accounts({
         state: ostiumPda,
-        transferFrom: feeCollectorPdaAccount,
+        transferFrom: feeCollectorAccount,
         transferTo: adminAccount,
-        transferAuthority: feeCollectorPda,
         signer: admin.publicKey,
         tokenProgram: TOKEN_PROGRAM_ID,
       })

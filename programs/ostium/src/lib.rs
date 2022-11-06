@@ -9,7 +9,6 @@ use context::*;
 use utils::*;
 
 const OSTIUM_SEED: &str = "ostium";
-const FEE_COLLECTOR_SEED: &str = "fee-collector";
 
 declare_id!("DVCuZ7CgEi3WJrr1RMUhEP2eYW8PFKZXxw67RK9B9W6y");
 
@@ -17,11 +16,7 @@ declare_id!("DVCuZ7CgEi3WJrr1RMUhEP2eYW8PFKZXxw67RK9B9W6y");
 pub mod ostium {
     use super::*;
 
-    pub fn initialize(
-        ctx: Context<Initialize>,
-        ostium_bump: u8,
-        fee_collector_bump: u8,
-    ) -> Result<()> {
+    pub fn initialize(ctx: Context<Initialize>, ostium_bump: u8) -> Result<()> {
         msg!("Ostium: INITIALIZE");
         let state = &mut ctx.accounts.state;
 
@@ -29,7 +24,6 @@ pub mod ostium {
 
         state.is_initialized = true;
         state.admin = *ctx.accounts.signer.key;
-        state.fee_collector_bump = fee_collector_bump;
         state.ostium_bump = ostium_bump;
 
         Ok(())
@@ -61,7 +55,7 @@ pub mod ostium {
             error::ErrorCode::PermissionDenied
         );
 
-        let seeds = &[FEE_COLLECTOR_SEED.as_bytes(), &[state.fee_collector_bump]];
+        let seeds = &[OSTIUM_SEED.as_bytes(), &[state.ostium_bump]];
         let signer = &[&seeds[..]];
         token::transfer(
             ctx.accounts.into_transfer_context().with_signer(signer),
