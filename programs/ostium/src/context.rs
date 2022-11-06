@@ -46,11 +46,20 @@ pub struct CollectFees<'info> {
         constraint = state.to_account_info().owner == program_id,
     )]
     pub state: Account<'info, State>,
-    #[account(mut)]
+    #[account(mut,
+        constraint = &transfer_from.owner == transfer_authority.key,
+    )]
     pub transfer_from: Account<'info, TokenAccount>,
-    #[account(mut)]
+    #[account(mut,
+        constraint = transfer_to.owner == state.admin,
+        constraint = &transfer_to.owner == signer.key,
+    )]
     pub transfer_to: Account<'info, TokenAccount>,
     /// CHECK: This is not dangerous because we don't read or write from this account
+    #[account(
+        seeds = [b"fee-collector".as_ref()],
+        bump = state.fee_collector_bump,
+    )]
     pub transfer_authority: AccountInfo<'info>,
     pub signer: Signer<'info>,
     pub token_program: Program<'info, Token>,
