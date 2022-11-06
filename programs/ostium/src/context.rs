@@ -72,11 +72,23 @@ impl<'info> CollectFees<'info> {
 
 #[derive(Accounts)]
 pub struct DepositCollateral<'info> {
-    #[account(mut)]
+    #[account(
+        seeds = [b"ostium".as_ref()],
+        bump = state.ostium_bump,
+        constraint = state.to_account_info().owner == program_id,
+    )]
+    pub state: Account<'info, State>,
+    #[account(mut,
+        constraint = position.to_account_info().owner == program_id,
+    )]
     pub position: Account<'info, Position>,
-    #[account(mut)]
+    #[account(mut,
+        constraint = &transfer_from.owner == signer.key
+    )]
     pub transfer_from: Account<'info, TokenAccount>,
-    #[account(mut)]
+    #[account(mut,
+        constraint = &transfer_to.owner == state.to_account_info().key
+    )]
     pub transfer_to: Account<'info, TokenAccount>,
     pub signer: Signer<'info>,
     pub token_program: Program<'info, Token>,

@@ -191,6 +191,7 @@ describe("ostium", () => {
     await program.methods
       .depositCollateral(new anchor.BN(DEPOSIT_AMOUNT))
       .accounts({
+        state: ostiumPda,
         position: positionPda,
         transferFrom: userAccount,
         transferTo: ostiumPdaAccount,
